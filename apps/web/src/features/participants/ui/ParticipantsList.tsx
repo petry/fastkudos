@@ -47,32 +47,31 @@ export function ParticipantsList({
           Nenhum participante.
         </p>
       ) : (
-        <ul
-          className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
-          data-testid="participants"
-        >
+        <ul className="mt-3 space-y-3" data-testid="participants">
           {filtered.map((p) => (
             <li
               key={p.id}
-              className="flex flex-col items-center rounded-2xl border border-slate-100 bg-white p-3 text-center shadow-sm"
+              className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"
             >
-              <Avatar name={p.displayName} size="md" />
-              <span
-                className="mt-2 line-clamp-2 w-full text-sm font-medium text-slate-800"
-                title={p.displayName}
-              >
-                {p.displayName}
-              </span>
-              <button
-                type="button"
-                onClick={() => setOpenId(openId === p.id ? null : p.id)}
-                className="mt-3 inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100"
-              >
-                <Send className="h-3.5 w-3.5" aria-hidden="true" />
-                Enviar kudo
-              </button>
+              <div className="flex items-center gap-3">
+                <Avatar name={p.displayName} size="md" />
+                <span
+                  className="flex-1 truncate text-sm font-medium text-slate-800"
+                  title={p.displayName}
+                >
+                  {p.displayName}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setOpenId(openId === p.id ? null : p.id)}
+                  className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100"
+                >
+                  <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                  Enviar kudo
+                </button>
+              </div>
               {openId === p.id && (
-                <div className="mt-3 w-full rounded-xl bg-slate-50 p-3 text-left">
+                <div className="mt-3 rounded-xl bg-slate-50 p-3">
                   <SendKudoForm
                     receiver={p}
                     token={token}
