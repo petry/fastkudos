@@ -19,7 +19,13 @@ export interface Env {
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use('*', cors());
+app.use(
+  '*',
+  cors({
+    origin: ['https://fastkudos.petry.io', 'http://localhost:5173', 'http://localhost:4173'],
+    credentials: false,
+  }),
+);
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
