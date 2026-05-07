@@ -28,7 +28,10 @@ test.describe('fluxo do participante', () => {
     });
 
     await page.route('**/events/demo/profiles', (r) =>
-      json(r, 200, { profiles: [PROFILE_ME, PROFILE_BOB] }),
+      json(r, 200, {
+        event: { id: 'e1', name: 'Encontro Demo', slug: 'demo' },
+        profiles: [PROFILE_ME, PROFILE_BOB],
+      }),
     );
 
     await page.route('**/inbox', (r) => json(r, 200, { feedbacks: [] }));
@@ -71,7 +74,10 @@ test.describe('fluxo do participante', () => {
   test('reaproveita sessão do localStorage e pula onboarding', async ({ page, context }) => {
     await page.route('**/events/**/stream**', (r) => r.abort());
     await page.route('**/events/demo/profiles', (r) =>
-      json(r, 200, { profiles: [PROFILE_ME, PROFILE_BOB] }),
+      json(r, 200, {
+        event: { id: 'e1', name: 'Encontro Demo', slug: 'demo' },
+        profiles: [PROFILE_ME, PROFILE_BOB],
+      }),
     );
     await page.route('**/inbox', (r) => json(r, 200, { feedbacks: [] }));
 

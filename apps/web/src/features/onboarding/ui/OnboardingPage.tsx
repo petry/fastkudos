@@ -6,7 +6,7 @@ import type { Profile } from '@fastkudos/shared';
 import { joinEvent } from '../application/join-event';
 import type { AuthGateway, SessionStore } from '../domain/ports';
 import { ParticipantsList } from '../../participants/ui/ParticipantsList';
-import type { ParticipantsGateway } from '../../participants/domain/ports';
+import type { EventSummary, ParticipantsGateway } from '../../participants/domain/ports';
 import type { KudosGateway } from '../../kudos/domain/ports';
 import { InboxList } from '../../inbox/ui/InboxList';
 import type { InboxGateway } from '../../inbox/domain/ports';
@@ -148,14 +148,17 @@ function JoinedView({
   onLeave: () => void;
 } & OnboardingPageProps) {
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
+  const [event, setEvent] = useState<EventSummary | null>(null);
   const [profilesError, setProfilesError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     participants
       .list({ slug, token: joined.token })
-      .then((items) => {
-        if (!cancelled) setProfiles(items);
+      .then((data) => {
+        if (cancelled) return;
+        setProfiles(data.profiles);
+        setEvent(data.event);
       })
       .catch((e) => {
         if (!cancelled) setProfilesError(e instanceof Error ? e.message : 'erro');
@@ -191,7 +194,12 @@ function JoinedView({
           <Avatar name={joined.profile.displayName} size="lg" />
           <div className="flex-1">
             <p className="text-xs uppercase tracking-wide text-white/70">Evento</p>
-            <p className="font-mono text-sm text-white/90">/e/{slug}</p>
+            <p
+              data-testid="event-name"
+              className="text-sm font-medium text-white/90"
+            >
+              {event?.name ?? '…'}
+            </p>
             <p data-testid="welcome" className="mt-1 text-xl font-semibold">
               Olá, {joined.profile.displayName}!
             </p>

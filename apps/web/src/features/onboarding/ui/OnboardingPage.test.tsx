@@ -20,7 +20,7 @@ function setup(overrides?: { cached?: { token: string; profile: Profile } | null
   render(
     <MemoryRouter initialEntries={['/e/demo']}>
       <Routes>
-        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => [] }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} />} />
+        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -45,6 +45,14 @@ describe('<OnboardingPage>', () => {
     expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Bob!');
   });
 
+  it('exibe o nome do evento no header em vez da URL', async () => {
+    setup({
+      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false } },
+    });
+    expect(await screen.findByTestId('event-name')).toHaveTextContent('Demo');
+    expect(screen.queryByText('/e/demo')).not.toBeInTheDocument();
+  });
+
   it('exibe erro quando o gateway falha', async () => {
     const user = userEvent.setup();
     const session: SessionStore = { save: vi.fn(), load: vi.fn(() => null) };
@@ -56,7 +64,7 @@ describe('<OnboardingPage>', () => {
     render(
       <MemoryRouter initialEntries={['/e/demo']}>
         <Routes>
-          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => [] }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} />} />
+          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} />} />
         </Routes>
       </MemoryRouter>,
     );

@@ -45,11 +45,11 @@ eventRoutes.get('/:slug/profiles', async (c) => {
   const db = getDb(c.env);
 
   try {
-    const profiles = await listParticipants(
+    const result = await listParticipants(
       { events: eventBySlug(db), participants: participantsRepo(db) },
       { slug, callerEventId: user.eventId },
     );
-    return c.json({ profiles });
+    return c.json(result);
   } catch (e) {
     if (e instanceof NotFoundError) return c.json({ error: 'event_not_found' }, 404);
     if (e instanceof ForbiddenError) return c.json({ error: 'forbidden' }, 403);

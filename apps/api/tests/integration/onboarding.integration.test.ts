@@ -97,7 +97,11 @@ describe('integração: onboarding + listagem + autorização', () => {
       envFor(),
     );
     expect(ok.status).toBe(200);
-    const okBody = (await ok.json()) as { profiles: Array<{ displayName: string }> };
+    const okBody = (await ok.json()) as {
+      event: { id: string; name: string; slug: string };
+      profiles: Array<{ displayName: string }>;
+    };
+    expect(okBody.event).toEqual({ id: a.event.id, name: 'event-a', slug: 'event-a' });
     expect(okBody.profiles.map((p) => p.displayName)).toEqual(['Alice']);
 
     // caller pertence a A mas tenta listar B → 403

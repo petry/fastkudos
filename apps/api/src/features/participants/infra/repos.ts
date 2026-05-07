@@ -7,7 +7,11 @@ import type { EventBySlug, ParticipantsRepo } from '../domain/ports';
 export function eventBySlug(db: Database): EventBySlug {
   return {
     async findBySlug(slug) {
-      const rows = await db.select({ id: events.id }).from(events).where(eq(events.slug, slug)).limit(1);
+      const rows = await db
+        .select({ id: events.id, name: events.name, slug: events.slug })
+        .from(events)
+        .where(eq(events.slug, slug))
+        .limit(1);
       return rows[0] ?? null;
     },
   };

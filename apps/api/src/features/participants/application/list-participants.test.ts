@@ -10,7 +10,10 @@ const profiles: Profile[] = [
 
 function deps(overrides?: { findBySlug?: EventBySlug['findBySlug'] }) {
   const events: EventBySlug = {
-    findBySlug: overrides?.findBySlug ?? (async (s) => (s === 'demo' ? { id: 'e1' } : null)),
+    findBySlug:
+      overrides?.findBySlug ??
+      (async (s) =>
+        s === 'demo' ? { id: 'e1', name: 'Evento Demo', slug: 'demo' } : null),
   };
   const participants: ParticipantsRepo = {
     listByEvent: async (eid) => (eid === 'e1' ? profiles : []),
@@ -19,9 +22,10 @@ function deps(overrides?: { findBySlug?: EventBySlug['findBySlug'] }) {
 }
 
 describe('listParticipants', () => {
-  it('retorna participantes do evento quando caller pertence a ele', async () => {
+  it('retorna evento e participantes quando caller pertence a ele', async () => {
     const result = await listParticipants(deps(), { slug: 'demo', callerEventId: 'e1' });
-    expect(result).toHaveLength(2);
+    expect(result.event).toEqual({ id: 'e1', name: 'Evento Demo', slug: 'demo' });
+    expect(result.profiles).toHaveLength(2);
   });
 
   it('rejeita com ForbiddenError quando caller pertence a outro evento', async () => {
