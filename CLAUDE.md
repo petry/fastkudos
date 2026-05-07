@@ -81,7 +81,13 @@ pnpm -F @fastkudos/api db:seed        # popula evento demo (apenas dev)
 
 ## 8. Variáveis de ambiente
 
-Ver `.env.example`. Nunca commitar `.env`. Em produção, segredos do Worker via `wrangler secret put`.
+- **Front (Vite)**: `.env.example` na raiz, `VITE_API_URL` lido em build time.
+- **API local (`wrangler dev`)**: copie `apps/api/.dev.vars.example` para
+  `apps/api/.dev.vars` e preencha `DATABASE_URL` (Neon dev) e `JWT_SECRET`.
+- **API produção (Worker)**: `wrangler secret put DATABASE_URL` e
+  `wrangler secret put JWT_SECRET`.
+
+Nunca commitar `.env` nem `.dev.vars` (já no `.gitignore`).
 
 ## 9. Fluxo de migrations
 

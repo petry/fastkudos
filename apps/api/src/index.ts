@@ -12,20 +12,24 @@ export { EventChannel } from './realtime/event-channel';
 export interface Env {
   DATABASE_URL: string;
   JWT_SECRET: string;
+  /** Lista de origens separada por vírgula. Quando ausente, libera tudo (apenas dev). */
+  ALLOWED_ORIGINS?: string;
   EVENT_CHANNEL: DurableObjectNamespace;
   /** Apenas para testes de integração — produção usa o driver Neon. */
   DB_OVERRIDE?: Database;
 }
 
+const DEV_ORIGINS = ['http://localhost:5173', 'http://localhost:4173'];
+
 const app = new Hono<{ Bindings: Env }>();
 
-app.use(
-  '*',
-  cors({
-    origin: ['https://fastkudos.petry.io', 'http://localhost:5173', 'http://localhost:4173'],
-    credentials: false,
-  }),
-);
+app.use('*', async (c, next) => {
+  const list = c.env?.ALLOWED_ORIGINS;
+  const allowed = list
+    ? [...list.split(',').map((s) => s.trim()).filter(Boolean), ...DEV_ORIGINS]
+    : '*';
+  return cors({ origin: allowed, credentials: false })(c, next);
+});
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 

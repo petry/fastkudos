@@ -40,7 +40,7 @@ já é criado automaticamente pelo `wrangler.toml` (binding `EVENT_CHANNEL`).
 ### Custom domain (opcional)
 
 No painel Cloudflare → Workers & Pages → fastkudos-api → Triggers → Custom
-Domains, adicione `api.fastkudos.app` (substitua pelo seu domínio).
+Domains, adicione `api.<seu-dominio>` (substitua pelo seu domínio).
 
 ## 3. Deploy do Web (Cloudflare Pages)
 
@@ -55,7 +55,7 @@ to Git, conecte o repositório com a configuração:
 | Build command | `pnpm install --frozen-lockfile && pnpm -F @fastkudos/web build` |
 | Build output directory | `apps/web/dist` |
 | Root directory | (vazio) |
-| Environment variable | `VITE_API_URL=https://api.fastkudos.app` (URL do Worker) |
+| Environment variable | `VITE_API_URL=https://<api-host>` (URL do Worker) |
 | Node version | 20 |
 
 Cloudflare Pages instala o pnpm via corepack quando detecta `packageManager`.
@@ -65,7 +65,7 @@ O build roda em CI Cloudflare a cada push.
 
 ```bash
 cd apps/web
-VITE_API_URL=https://api.fastkudos.app pnpm build
+VITE_API_URL=https://<api-host> pnpm build
 pnpm deploy:pages   # `wrangler pages deploy dist --project-name=fastkudos-web`
 ```
 
@@ -74,12 +74,17 @@ SPA do React Router em rotas como `/e/:slug` e `/admin/events/:id`.
 
 ## 4. CORS e domínios
 
-A API tem `cors()` global aberto (`*`). Para restringir em produção, edite
-`apps/api/src/index.ts`:
+Em produção, defina o secret `ALLOWED_ORIGINS` com a lista de origens
+permitidas (separadas por vírgula). Quando ausente, a API libera `*`
+(somente para dev).
 
-```ts
-app.use('*', cors({ origin: ['https://fastkudos.app', 'https://www.fastkudos.app'] }));
+```bash
+echo 'https://app.exemplo.com,https://www.app.exemplo.com' \
+  | pnpm exec wrangler secret put ALLOWED_ORIGINS
 ```
+
+`http://localhost:5173` e `http://localhost:4173` são sempre incluídos
+para o fluxo de dev local.
 
 ## 5. WebSocket (mural realtime)
 
@@ -92,36 +97,36 @@ O Durable Object `EventChannel` faz fan-out por evento.
 Não há rota pública de signup. Crie o admin diretamente no banco:
 
 ```bash
-# gere um hash localmente
-node -e "
+# gere um hash localmente (mesmo limite de iterações que o Worker usa)
+node --experimental-strip-types -e "
 import('./apps/api/src/auth/password.ts').then(async (m) => {
-  console.log(await m.hashPassword('senha-aqui'));
+  console.log(await m.hashPassword('SENHA_DESEJADA'));
 });
 "
 
 # insira no Neon (psql ou dashboard SQL):
 INSERT INTO admin_users(email, password_hash)
-VALUES ('voce@empresa.com', 'pbkdf2$210000$...');
+VALUES ('SEU_EMAIL', 'pbkdf2$100000$...');
 ```
 
-Depois faça login em `https://fastkudos.app/admin/login` e crie eventos pelo
-dashboard.
+Depois faça login em `https://<dominio-front>/admin/login` e crie eventos
+pelo dashboard.
 
 ## 7. Smoke test pós-deploy
 
 ```bash
 # health check
-curl https://api.fastkudos.app/health
+curl https://<api-host>/health
 # {"status":"ok"}
 
 # criar evento via API com token admin
-curl -X POST https://api.fastkudos.app/auth/login \
+curl -X POST https://<api-host>/auth/login \
   -H 'content-type: application/json' \
-  -d '{"email":"voce@empresa.com","password":"..."}'
+  -d '{"email":"SEU_EMAIL","password":"SUA_SENHA"}'
 # {"token":"...","admin":{...}}
 ```
 
-Abra `https://fastkudos.app/e/<slug>` em duas abas com nomes diferentes,
+Abra `https://<dominio-front>/e/<slug>` em duas abas com nomes diferentes,
 envie um kudo de uma para outra e confirme que aparece no mural e como
 toast em tempo real.
 
