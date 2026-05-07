@@ -5,7 +5,7 @@ import { ArrowRight, LogOut, MessageCircle, Sparkles, Users } from 'lucide-react
 import type { Profile } from '@fastkudos/shared';
 import { joinEvent, joinEventAsUser } from '../application/join-event';
 import type { AuthGateway, SessionStore } from '../domain/ports';
-import type { LoggedSessionStore } from '../../admin/domain/ports';
+import type { LoggedSessionStore, UserAuthGateway } from '../../admin/domain/ports';
 import { ParticipantsList } from '../../participants/ui/ParticipantsList';
 import type { EventSummary, ParticipantsGateway } from '../../participants/domain/ports';
 import type { KudosGateway } from '../../kudos/domain/ports';
@@ -20,6 +20,8 @@ export interface OnboardingPageProps {
   session: SessionStore;
   /** Sessão de user logado (Google). Quando presente, dispara auto-join silencioso. */
   userSession?: LoggedSessionStore;
+  /** Gateway para iniciar login social no formulário de entrada. */
+  userAuth?: UserAuthGateway;
   participants: ParticipantsGateway;
   kudos: KudosGateway;
   stream: EventStream;
@@ -79,6 +81,7 @@ export function OnboardingPage(props: OnboardingPageProps) {
       slug={slug}
       auth={props.auth}
       session={props.session}
+      userAuth={props.userAuth}
       onJoined={(s) => {
         setJoined(s);
         props.onJoined?.(s);
@@ -120,10 +123,11 @@ interface JoinFormProps {
   slug: string;
   auth: AuthGateway;
   session: SessionStore;
+  userAuth?: UserAuthGateway;
   onJoined: (s: { token: string; profile: Profile }) => void;
 }
 
-function JoinForm({ slug, auth, session, onJoined }: JoinFormProps) {
+function JoinForm({ slug, auth, session, userAuth, onJoined }: JoinFormProps) {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -184,6 +188,22 @@ function JoinForm({ slug, auth, session, onJoined }: JoinFormProps) {
             </p>
           )}
         </form>
+        {userAuth && (
+          <>
+            <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
+              ou
+              <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
+            </div>
+            <button
+              type="button"
+              onClick={() => userAuth.startGoogleLogin(`/e/${slug}`)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 font-medium text-slate-800 shadow-sm hover:bg-slate-50"
+            >
+              Continuar com Google
+            </button>
+          </>
+        )}
       </div>
     </main>
   );

@@ -5,7 +5,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { Profile } from '@fastkudos/shared';
 import { OnboardingPage } from './OnboardingPage';
 import type { AuthGateway, SessionStore } from '../domain/ports';
-import type { LoggedSession, LoggedSessionStore } from '../../admin/domain/ports';
+import type {
+  LoggedSession,
+  LoggedSessionStore,
+  UserAuthGateway,
+} from '../../admin/domain/ports';
 
 interface SetupOptions {
   cached?: { token: string; profile: Profile } | null;
@@ -34,6 +38,10 @@ function setup(opts: SetupOptions = {}) {
     load: vi.fn(() => opts.loggedUser ?? null),
     clear: vi.fn(),
   };
+  const userAuth: UserAuthGateway = {
+    startGoogleLogin: vi.fn(),
+    fetchMe: vi.fn(),
+  };
   render(
     <MemoryRouter initialEntries={['/e/demo']}>
       <Routes>
@@ -44,6 +52,7 @@ function setup(opts: SetupOptions = {}) {
               auth={auth}
               session={session}
               userSession={userSession}
+              userAuth={userAuth}
               participants={{
                 list: async () => ({
                   event: { id: 'e1', name: 'Demo', slug: 'demo' },
@@ -59,7 +68,7 @@ function setup(opts: SetupOptions = {}) {
       </Routes>
     </MemoryRouter>,
   );
-  return { auth, session, userSession };
+  return { auth, session, userSession, userAuth };
 }
 
 const loggedAlice: LoggedSession = {
@@ -116,6 +125,14 @@ describe('<OnboardingPage> anônimo', () => {
     expect(screen.queryByText(/sua caixa de recados/i)).not.toBeInTheDocument();
   });
 
+  it('mostra botão de login Google e dispara startGoogleLogin com redirect do evento', async () => {
+    const user = userEvent.setup();
+    const { userAuth } = setup();
+    const googleBtn = screen.getByRole('button', { name: /continuar com google/i });
+    await user.click(googleBtn);
+    expect(userAuth.startGoogleLogin).toHaveBeenCalledWith('/e/demo');
+  });
+
   it('exibe erro quando o gateway falha', async () => {
     const user = userEvent.setup();
     const { auth } = setup({
@@ -136,6 +153,9 @@ describe('<OnboardingPage> user logado', () => {
   it('faz auto-join silencioso sem renderizar o input de nome', async () => {
     const { auth } = setup({ loggedUser: loggedAlice });
     expect(screen.queryByLabelText('Seu nome')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /continuar com google/i }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(/entrando como alice login/i)).toBeInTheDocument();
     await waitFor(() => expect(auth.eventJoin).toHaveBeenCalledWith({
       slug: 'demo',

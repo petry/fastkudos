@@ -45,6 +45,7 @@ export function App() {
             auth={auth}
             session={session}
             userSession={userSession}
+            userAuth={userAuth}
             participants={participants}
             kudos={kudos}
             stream={stream}
