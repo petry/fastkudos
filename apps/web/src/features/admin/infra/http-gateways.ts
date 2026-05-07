@@ -1,4 +1,4 @@
-import type { Event, Feedback } from '@fastkudos/shared';
+import type { Event, Feedback, Profile } from '@fastkudos/shared';
 import type { AdminAuthGateway, AdminEventsGateway } from '../domain/ports';
 
 export function httpAdminAuthGateway(baseUrl: string, fetchImpl: typeof fetch = fetch): AdminAuthGateway {
@@ -53,6 +53,20 @@ export function httpAdminEventsGateway(baseUrl: string, fetchImpl: typeof fetch 
         headers: { authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`delete_failed_${res.status}`);
+    },
+    async profiles({ token, eventId }) {
+      const res = await fetchImpl(`${baseUrl}/admin/events/${encodeURIComponent(eventId)}/profiles`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`profiles_failed_${res.status}`);
+      return ((await res.json()) as { profiles: Profile[] }).profiles;
+    },
+    async deleteProfile({ token, profileId }) {
+      const res = await fetchImpl(`${baseUrl}/admin/profiles/${encodeURIComponent(profileId)}`, {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`delete_profile_failed_${res.status}`);
     },
   };
 }

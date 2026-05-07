@@ -13,6 +13,7 @@ import type {
   EventFeedbacksRepo,
   OwnedEventLookup,
 } from '../application/list-event-feedbacks';
+import type { EventProfilesRepo } from '../application/list-event-profiles';
 
 export function adminUserRepo(db: Database): AdminUserRepo {
   return {
@@ -119,6 +120,24 @@ export function eventFeedbacksRepo(db: Database): EventFeedbacksRepo {
         receiverId: r.receiverId,
         eventId: r.eventId,
         content: r.content,
+      }));
+    },
+  };
+}
+
+export function eventProfilesRepo(db: Database): EventProfilesRepo {
+  return {
+    async listByEvent(eventId) {
+      const rows = await db
+        .select()
+        .from(profiles)
+        .where(eq(profiles.eventId, eventId))
+        .orderBy(desc(profiles.createdAt));
+      return rows.map((r) => ({
+        id: r.id,
+        displayName: r.displayName,
+        eventId: r.eventId,
+        isAdmin: r.isAdmin,
       }));
     },
   };

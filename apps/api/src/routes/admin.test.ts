@@ -89,6 +89,17 @@ describe('GET /admin/events/:id/feedbacks (borda)', () => {
   });
 });
 
+describe('GET /admin/events/:id/profiles (borda)', () => {
+  it('retorna 403 para não-admin', async () => {
+    const res = await app.request(
+      'http://local/admin/events/x/profiles',
+      { headers: { authorization: `Bearer ${await anonToken()}` } },
+      env,
+    );
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('POST /auth/login (borda)', () => {
   it('retorna 400 com input inválido', async () => {
     const res = await app.request('http://local/auth/login', {

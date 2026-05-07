@@ -11,6 +11,8 @@ function gw(events: Event[] = []): AdminEventsGateway {
     list: vi.fn(async () => events),
     feedbacks: vi.fn(async () => []),
     deleteFeedback: vi.fn(),
+    profiles: vi.fn(async () => []),
+    deleteProfile: vi.fn(),
   };
 }
 

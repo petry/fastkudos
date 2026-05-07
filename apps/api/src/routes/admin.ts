@@ -16,6 +16,7 @@ import {
   ownedEventsRepo,
   ownedEventLookup,
   eventFeedbacksRepo,
+  eventProfilesRepo,
 } from '../features/admin/infra/repos';
 import { listOwnedEvents } from '../features/admin/application/list-owned-events';
 import {
@@ -23,6 +24,7 @@ import {
   NotFoundError as ListNotFound,
   listEventFeedbacks,
 } from '../features/admin/application/list-event-feedbacks';
+import { listEventProfiles } from '../features/admin/application/list-event-profiles';
 
 export const adminRoutes = new Hono<AuthContext>();
 
@@ -44,6 +46,22 @@ adminRoutes.get('/events/:id/feedbacks', async (c) => {
       { eventId: c.req.param('id'), adminId: user.profileId },
     );
     return c.json({ feedbacks });
+  } catch (e) {
+    if (e instanceof ListNotFound) return c.json({ error: 'not_found' }, 404);
+    if (e instanceof ListForbidden) return c.json({ error: 'forbidden' }, 403);
+    throw e;
+  }
+});
+
+adminRoutes.get('/events/:id/profiles', async (c) => {
+  const user = getUser(c);
+  const db = getDb(c.env);
+  try {
+    const profiles = await listEventProfiles(
+      { events: ownedEventLookup(db), profiles: eventProfilesRepo(db) },
+      { eventId: c.req.param('id'), adminId: user.profileId },
+    );
+    return c.json({ profiles });
   } catch (e) {
     if (e instanceof ListNotFound) return c.json({ error: 'not_found' }, 404);
     if (e instanceof ListForbidden) return c.json({ error: 'forbidden' }, 403);

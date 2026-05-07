@@ -10,6 +10,8 @@ function setup(impl?: AdminEventsGateway['create']) {
     list: vi.fn(async () => []),
     feedbacks: vi.fn(async () => []),
     deleteFeedback: vi.fn(),
+    profiles: vi.fn(async () => []),
+    deleteProfile: vi.fn(),
   };
   render(<CreateEventForm token="tok" gateway={gateway} />);
   return { gateway };

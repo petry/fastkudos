@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import type { Feedback } from '@fastkudos/shared';
+import type { Feedback, Profile } from '@fastkudos/shared';
 import { ModerationPage } from './ModerationPage';
 import type { AdminEventsGateway, AdminSessionStore } from '../domain/ports';
 
@@ -15,12 +15,21 @@ const fb = (id: string, content: string): Feedback => ({
   content,
 });
 
-function setup(items: Feedback[]) {
+const profile = (id: string, displayName: string): Profile => ({
+  id,
+  displayName,
+  eventId: 'e1',
+  isAdmin: false,
+});
+
+function setup(opts?: { feedbacks?: Feedback[]; profiles?: Profile[] }) {
   const gateway: AdminEventsGateway = {
     create: vi.fn(),
     list: vi.fn(),
-    feedbacks: vi.fn(async () => items),
+    feedbacks: vi.fn(async () => opts?.feedbacks ?? []),
     deleteFeedback: vi.fn(async () => {}),
+    profiles: vi.fn(async () => opts?.profiles ?? []),
+    deleteProfile: vi.fn(async () => {}),
   };
   const session: AdminSessionStore = {
     save: vi.fn(),
@@ -30,17 +39,20 @@ function setup(items: Feedback[]) {
   render(
     <MemoryRouter initialEntries={['/admin/events/e1']}>
       <Routes>
-        <Route path="/admin/events/:id" element={<ModerationPage session={session} gateway={gateway} />} />
+        <Route
+          path="/admin/events/:id"
+          element={<ModerationPage session={session} gateway={gateway} />}
+        />
       </Routes>
     </MemoryRouter>,
   );
   return { gateway };
 }
 
-describe('<ModerationPage>', () => {
+describe('<ModerationPage> feedbacks', () => {
   it('lista feedbacks e remove ao apagar', async () => {
     const user = userEvent.setup();
-    const { gateway } = setup([fb('f1', 'oi'), fb('f2', 'top')]);
+    const { gateway } = setup({ feedbacks: [fb('f1', 'oi'), fb('f2', 'top')] });
     await waitFor(() => screen.getByText('oi'));
     const buttons = screen.getAllByRole('button', { name: /apagar/i });
     await user.click(buttons[0]!);
@@ -50,7 +62,27 @@ describe('<ModerationPage>', () => {
   });
 
   it('mostra estado vazio quando não há feedbacks', async () => {
-    setup([]);
+    setup({ feedbacks: [] });
     await waitFor(() => screen.getByText(/nenhum feedback ainda/i));
+  });
+});
+
+describe('<ModerationPage> profiles', () => {
+  it('lista profiles e remove ao clicar Remover', async () => {
+    const user = userEvent.setup();
+    const { gateway } = setup({
+      profiles: [profile('p1', 'Alice'), profile('p2', 'Bob')],
+    });
+    await waitFor(() => screen.getByText('Alice'));
+    const buttons = screen.getAllByRole('button', { name: /remover/i });
+    await user.click(buttons[0]!);
+    expect(gateway.deleteProfile).toHaveBeenCalledWith({ token: 'tok', profileId: 'p1' });
+    await waitFor(() => expect(screen.queryByText('Alice')).not.toBeInTheDocument());
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+  });
+
+  it('mostra estado vazio quando não há participantes', async () => {
+    setup({ profiles: [] });
+    await waitFor(() => screen.getByText(/sem participantes/i));
   });
 });
