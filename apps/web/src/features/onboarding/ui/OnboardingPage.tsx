@@ -11,7 +11,7 @@ import type { KudosGateway } from '../../kudos/domain/ports';
 import { InboxList } from '../../inbox/ui/InboxList';
 import type { InboxGateway } from '../../inbox/domain/ports';
 import { MuralFeed } from '../../mural/ui/MuralFeed';
-import type { EventStream } from '../../mural/domain/ports';
+import type { EventStream, MuralGateway } from '../../mural/domain/ports';
 import { useKudoToasts } from '../../mural/ui/useKudoToasts';
 import { Avatar } from '../../../components/ui/Avatar';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
@@ -23,6 +23,7 @@ export interface OnboardingPageProps {
   kudos: KudosGateway;
   inbox: InboxGateway;
   stream: EventStream;
+  mural: MuralGateway;
   onJoined?: (s: { token: string; profile: Profile }) => void;
   /** Injetável para testes; padrão usa sonner. */
   notify?: (message: string) => void;
@@ -140,6 +141,7 @@ function JoinedView({
   kudos,
   inbox,
   stream,
+  mural,
   notify,
   onLeave,
 }: {
@@ -250,6 +252,7 @@ function JoinedView({
               slug={slug}
               token={joined.token}
               stream={stream}
+              gateway={mural}
               profilesById={profilesById}
               currentProfileId={joined.profile.id}
             />

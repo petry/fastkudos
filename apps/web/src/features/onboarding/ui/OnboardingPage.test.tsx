@@ -20,7 +20,7 @@ function setup(overrides?: { cached?: { token: string; profile: Profile } | null
   render(
     <MemoryRouter initialEntries={['/e/demo']}>
       <Routes>
-        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} />} />
+        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -64,7 +64,7 @@ describe('<OnboardingPage>', () => {
     render(
       <MemoryRouter initialEntries={['/e/demo']}>
         <Routes>
-          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} />} />
+          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
         </Routes>
       </MemoryRouter>,
     );

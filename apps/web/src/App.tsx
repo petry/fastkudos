@@ -6,6 +6,7 @@ import { localSessionStore } from './features/onboarding/infra/local-session-sto
 import { httpParticipantsGateway } from './features/participants/infra/http-participants-gateway';
 import { httpKudosGateway } from './features/kudos/infra/http-kudos-gateway';
 import { httpInboxGateway } from './features/inbox/infra/http-inbox-gateway';
+import { httpMuralGateway } from './features/mural/infra/http-mural-gateway';
 import { websocketStream } from './features/mural/infra/websocket-stream';
 import { AdminLoginPage } from './features/admin/ui/AdminLoginPage';
 import { AdminDashboardPage } from './features/admin/ui/AdminDashboardPage';
@@ -22,6 +23,7 @@ const session = localSessionStore();
 const participants = httpParticipantsGateway(apiUrl);
 const kudos = httpKudosGateway(apiUrl);
 const inbox = httpInboxGateway(apiUrl);
+const mural = httpMuralGateway(apiUrl);
 const stream = websocketStream(apiUrl);
 const adminAuth = httpAdminAuthGateway(apiUrl);
 const adminEvents = httpAdminEventsGateway(apiUrl);
@@ -41,6 +43,7 @@ export function App() {
             kudos={kudos}
             inbox={inbox}
             stream={stream}
+            mural={mural}
           />
         }
       />

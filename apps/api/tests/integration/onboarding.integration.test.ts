@@ -156,6 +156,47 @@ describe('integração: onboarding + listagem + autorização', () => {
     expect(inboxBody.feedbacks.map((f) => f.content)).toEqual(['mandou bem!']);
   });
 
+  it('GET /mural retorna apenas feedbacks do evento do caller (cross-event leak bloqueado)', async () => {
+    const a = await seedEvent('event-a');
+    const b = await seedEvent('event-b');
+    const [pa1] = await ctx.db
+      .insert(profiles)
+      .values({ displayName: 'A1', eventId: a.event.id })
+      .returning();
+    const [pa2] = await ctx.db
+      .insert(profiles)
+      .values({ displayName: 'A2', eventId: a.event.id })
+      .returning();
+    const [pb1] = await ctx.db
+      .insert(profiles)
+      .values({ displayName: 'B1', eventId: b.event.id })
+      .returning();
+    const [pb2] = await ctx.db
+      .insert(profiles)
+      .values({ displayName: 'B2', eventId: b.event.id })
+      .returning();
+    const { feedbacks } = await import('../../drizzle/schema');
+    await ctx.db.insert(feedbacks).values([
+      { senderId: pa1!.id, receiverId: pa2!.id, eventId: a.event.id, content: 'kudo-a' },
+      { senderId: pb1!.id, receiverId: pb2!.id, eventId: b.event.id, content: 'kudo-b' },
+    ]);
+
+    const tokenA = await signJwt(
+      { sub: pa1!.id, event_id: a.event.id, display_name: 'A1', is_admin: false },
+      SECRET,
+      60,
+    );
+
+    const res = await app.request(
+      'http://local/mural',
+      { headers: { authorization: `Bearer ${tokenA}` } },
+      envFor(),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { feedbacks: Array<{ content: string }> };
+    expect(body.feedbacks.map((f) => f.content)).toEqual(['kudo-a']);
+  });
+
   it('POST /kudos rejeita destinatário de outro evento (cross-event)', async () => {
     const a = await seedEvent('event-a');
     const b = await seedEvent('event-b');
