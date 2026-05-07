@@ -24,8 +24,8 @@ describe('<HomePage>', () => {
 
   it('mostra os 3 passos do "Como funciona"', () => {
     setup();
-    expect(screen.getByText(/receba o link/i)).toBeInTheDocument();
-    expect(screen.getByText(/diga seu nome/i)).toBeInTheDocument();
+    expect(screen.getByText(/crie seu evento/i)).toBeInTheDocument();
+    expect(screen.getByText(/divulgue/i)).toBeInTheDocument();
     expect(screen.getByText(/envie e receba/i)).toBeInTheDocument();
   });
 
@@ -38,5 +38,13 @@ describe('<HomePage>', () => {
     setup();
     const link = screen.getByRole('link', { name: /organizador/i });
     expect(link).toHaveAttribute('href', '/admin/login');
+  });
+
+  it('tem link "Fork me on GitHub" para o repositório', () => {
+    setup();
+    const link = screen.getByRole('link', { name: /fork me on github/i });
+    expect(link).toHaveAttribute('href', 'https://github.com/petry/fastkudos');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link.getAttribute('rel') ?? '').toContain('noopener');
   });
 });
