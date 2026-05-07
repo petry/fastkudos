@@ -1,75 +1,63 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { CheckCircle2, Send, Users as UsersIcon } from 'lucide-react';
 import type { Profile } from '@fastkudos/shared';
 import { filterParticipants } from '../domain/filter';
-import type { ParticipantsGateway } from '../domain/ports';
 import { SendKudoForm } from '../../kudos/ui/SendKudoForm';
 import type { KudosGateway } from '../../kudos/domain/ports';
+import { Avatar } from '../../../components/ui/Avatar';
 
 export interface ParticipantsListProps {
-  slug: string;
   token: string;
   currentProfileId: string;
-  gateway: ParticipantsGateway;
+  profiles: Profile[];
   kudos: KudosGateway;
 }
 
-export function ParticipantsList({ slug, token, currentProfileId, gateway, kudos }: ParticipantsListProps) {
-  const [items, setItems] = useState<Profile[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export function ParticipantsList({
+  token,
+  currentProfileId,
+  profiles,
+  kudos,
+}: ParticipantsListProps) {
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    gateway
-      .list({ slug, token })
-      .then((profiles) => {
-        if (!cancelled) setItems(profiles);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'erro');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, token, gateway]);
-
-  const filtered = useMemo(() => {
-    if (!items) return [];
-    return filterParticipants(
-      items.filter((p) => p.id !== currentProfileId),
-      query,
-    );
-  }, [items, query, currentProfileId]);
-
-  if (error) return <p role="alert" className="text-red-600">{error}</p>;
-  if (!items) return <p>Carregando…</p>;
+  const filtered = useMemo(
+    () =>
+      filterParticipants(
+        profiles.filter((p) => p.id !== currentProfileId),
+        query,
+      ),
+    [profiles, query, currentProfileId],
+  );
 
   return (
-    <section className="mt-6">
+    <div>
       <input
         aria-label="Buscar participante"
-        placeholder="Buscar…"
+        placeholder="Buscar participante…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="w-full rounded border border-slate-300 px-3 py-2"
+        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
       />
-      <ul className="mt-3 divide-y divide-slate-200" data-testid="participants">
+      <ul className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm" data-testid="participants">
         {filtered.map((p) => (
-          <li key={p.id} className="py-2">
-            <div className="flex items-center justify-between">
-              <span>{p.displayName}</span>
+          <li key={p.id} className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Avatar name={p.displayName} size="sm" />
+              <span className="flex-1 font-medium text-slate-800">{p.displayName}</span>
               <button
                 type="button"
                 onClick={() => setOpenId(openId === p.id ? null : p.id)}
-                className="rounded border border-slate-300 px-2 py-1 text-xs"
+                className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100"
               >
+                <Send className="h-3.5 w-3.5" aria-hidden="true" />
                 Enviar kudo
               </button>
             </div>
             {openId === p.id && (
-              <div className="mt-2">
+              <div className="mt-3 rounded-xl bg-slate-50 p-3">
                 <SendKudoForm
                   receiver={p}
                   token={token}
@@ -84,13 +72,22 @@ export function ParticipantsList({ slug, token, currentProfileId, gateway, kudos
             )}
           </li>
         ))}
-        {filtered.length === 0 && <li className="py-2 text-slate-500">Nenhum participante.</li>}
+        {filtered.length === 0 && (
+          <li className="flex items-center gap-2 px-4 py-6 text-sm text-slate-500">
+            <UsersIcon className="h-4 w-4" aria-hidden="true" />
+            Nenhum participante.
+          </li>
+        )}
       </ul>
       {sentTo && (
-        <p role="status" className="mt-3 text-sm text-emerald-700">
+        <p
+          role="status"
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700"
+        >
+          <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           Kudo enviado para {sentTo}!
         </p>
       )}
-    </section>
+    </div>
   );
 }

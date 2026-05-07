@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
-import type { Feedback } from '@fastkudos/shared';
+import { Sparkles } from 'lucide-react';
+import type { Feedback, Profile } from '@fastkudos/shared';
 import type { EventStream } from '../domain/ports';
 import { applyMuralEvent } from '../domain/reduce';
+import { KudoCard } from '../../../components/ui/KudoCard';
 
 export interface MuralFeedProps {
   slug: string;
   token: string;
   stream: EventStream;
+  profilesById: Map<string, Profile>;
+  currentProfileId?: string;
 }
 
-export function MuralFeed({ slug, token, stream }: MuralFeedProps) {
+export function MuralFeed({ slug, token, stream, profilesById, currentProfileId }: MuralFeedProps) {
   const [items, setItems] = useState<Feedback[]>([]);
 
   useEffect(() => {
@@ -20,14 +24,23 @@ export function MuralFeed({ slug, token, stream }: MuralFeedProps) {
   }, [slug, token, stream]);
 
   if (items.length === 0)
-    return <p className="text-slate-500">Aguardando o primeiro kudo do evento…</p>;
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-center">
+        <Sparkles className="mx-auto h-8 w-8 text-rose-400" aria-hidden="true" />
+        <p className="mt-2 text-sm text-slate-500">Aguardando o primeiro kudo do evento…</p>
+      </div>
+    );
 
   return (
-    <ul className="space-y-2" data-testid="mural">
+    <ul className="space-y-3" data-testid="mural">
       {items.map((f) => (
-        <li key={f.id} className="rounded border border-slate-200 bg-white p-3 shadow-sm">
-          <p className="text-sm">{f.content}</p>
-        </li>
+        <KudoCard
+          key={f.id}
+          variant="mural"
+          feedback={f}
+          profilesById={profilesById}
+          currentProfileId={currentProfileId}
+        />
       ))}
     </ul>
   );

@@ -1,4 +1,5 @@
 import { Route, Routes, useNavigate } from 'react-router-dom';
+import { HomePage } from './features/home/ui/HomePage';
 import { OnboardingPage } from './features/onboarding/ui/OnboardingPage';
 import { httpAuthGateway } from './features/onboarding/infra/http-auth-gateway';
 import { localSessionStore } from './features/onboarding/infra/local-session-store';
@@ -29,7 +30,7 @@ const adminSession = localAdminSessionStore();
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<HomePage />} />
       <Route
         path="/e/:slug"
         element={
@@ -67,13 +68,3 @@ function AdminLoginRoute() {
   );
 }
 
-function Home() {
-  return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-semibold">FastKudos</h1>
-      <p className="mt-2 text-slate-600">
-        Acesse via link do seu evento: <code>/e/&lt;slug&gt;</code>.
-      </p>
-    </main>
-  );
-}
