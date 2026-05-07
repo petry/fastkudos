@@ -5,11 +5,18 @@ export interface CollapsibleSectionProps {
   title: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   count?: number;
+  defaultExpanded?: boolean;
   children: ReactNode;
 }
 
-export function CollapsibleSection({ title, icon: Icon, count, children }: CollapsibleSectionProps) {
-  const [expanded, setExpanded] = useState(true);
+export function CollapsibleSection({
+  title,
+  icon: Icon,
+  count,
+  defaultExpanded = true,
+  children,
+}: CollapsibleSectionProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const contentId = useId();
 
   return (

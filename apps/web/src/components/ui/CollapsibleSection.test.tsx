@@ -36,6 +36,19 @@ describe('<CollapsibleSection>', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('inicia recolhido quando defaultExpanded={false}', () => {
+    render(
+      <CollapsibleSection title="Participantes" icon={Users} defaultExpanded={false}>
+        <p>Conteúdo</p>
+      </CollapsibleSection>,
+    );
+    expect(screen.queryByText('Conteúdo')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /participantes/i })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
   it('mantém título e contador visíveis quando recolhido', async () => {
     const user = userEvent.setup();
     render(

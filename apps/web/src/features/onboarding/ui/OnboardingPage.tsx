@@ -221,7 +221,7 @@ function JoinedView({
       </header>
 
       <div className="mx-auto max-w-2xl space-y-8 px-6 py-8">
-        <CollapsibleSection title="Participantes" icon={Users} count={otherCount}>
+        <CollapsibleSection title="Participantes" icon={Users} count={otherCount} defaultExpanded={false}>
           {profilesError ? (
             <p role="alert" className="text-red-600">
               {profilesError}
