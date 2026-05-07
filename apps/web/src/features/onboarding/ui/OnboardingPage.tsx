@@ -12,7 +12,7 @@ import { MuralFeed } from '../../mural/ui/MuralFeed';
 import type { EventStream, MuralGateway } from '../../mural/domain/ports';
 import { useKudoToasts } from '../../mural/ui/useKudoToasts';
 import { Avatar } from '../../../components/ui/Avatar';
-import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { CollapsibleSection } from '../../../components/ui/CollapsibleSection';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
@@ -221,39 +221,33 @@ function JoinedView({
       </header>
 
       <div className="mx-auto max-w-2xl space-y-8 px-6 py-8">
-        <section>
-          <SectionHeader title="Participantes" icon={Users} count={otherCount} />
-          <div className="mt-3">
-            {profilesError ? (
-              <p role="alert" className="text-red-600">
-                {profilesError}
-              </p>
-            ) : !profiles ? (
-              <p className="text-slate-500">Carregando…</p>
-            ) : (
-              <ParticipantsList
-                token={joined.token}
-                currentProfileId={joined.profile.id}
-                profiles={profiles}
-                kudos={kudos}
-              />
-            )}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader title="Mural do evento" icon={Sparkles} />
-          <div className="mt-3">
-            <MuralFeed
-              slug={slug}
+        <CollapsibleSection title="Participantes" icon={Users} count={otherCount}>
+          {profilesError ? (
+            <p role="alert" className="text-red-600">
+              {profilesError}
+            </p>
+          ) : !profiles ? (
+            <p className="text-slate-500">Carregando…</p>
+          ) : (
+            <ParticipantsList
               token={joined.token}
-              stream={stream}
-              gateway={mural}
-              profilesById={profilesById}
               currentProfileId={joined.profile.id}
+              profiles={profiles}
+              kudos={kudos}
             />
-          </div>
-        </section>
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Mural do evento" icon={Sparkles}>
+          <MuralFeed
+            slug={slug}
+            token={joined.token}
+            stream={stream}
+            gateway={mural}
+            profilesById={profilesById}
+            currentProfileId={joined.profile.id}
+          />
+        </CollapsibleSection>
       </div>
     </main>
   );
