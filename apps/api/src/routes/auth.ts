@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { adminLoginInput, anonAuthInput } from '@fastkudos/shared';
 import type { Env } from '../index';
-import { createDb } from '../db/client';
+import { getDb } from '../db/factory';
 import { signJwt } from '../auth/jwt';
 import { NotFoundError, registerAnonParticipant } from '../features/onboarding/application/register-anon';
 import { eventLookup, profileRepo } from '../features/onboarding/infra/repos';
@@ -20,7 +20,7 @@ authRoutes.post('/anon', async (c) => {
     return c.json({ error: 'invalid_input', issues: parsed.error.issues }, 400);
   }
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   const secret = c.env.JWT_SECRET;
 
   try {
@@ -51,7 +51,7 @@ authRoutes.post('/login', async (c) => {
   const parsed = adminLoginInput.safeParse(body);
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   try {
     const { adminId, email } = await adminLogin(
       { admins: adminUserRepo(db) },

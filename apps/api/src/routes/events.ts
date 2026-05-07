@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { requireAuth, getUser, type AuthContext } from '../auth/middleware';
 import { verifyJwt } from '../auth/jwt';
-import { createDb } from '../db/client';
+import { getDb } from '../db/factory';
 import {
   ForbiddenError,
   NotFoundError,
@@ -28,7 +28,7 @@ eventRoutes.get('/:slug/stream', async (c) => {
   }
 
   const slug = c.req.param('slug');
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   const event = await eventBySlug(db).findBySlug(slug);
   if (!event) return c.json({ error: 'event_not_found' }, 404);
   if (event.id !== claims.event_id) return c.json({ error: 'forbidden' }, 403);
@@ -42,7 +42,7 @@ eventRoutes.use('*', requireAuth());
 eventRoutes.get('/:slug/profiles', async (c) => {
   const user = getUser(c);
   const slug = c.req.param('slug');
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
 
   try {
     const profiles = await listParticipants(

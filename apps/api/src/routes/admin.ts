@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { createEventInput } from '@fastkudos/shared';
 import { requireAuth, requireAdmin, getUser, type AuthContext } from '../auth/middleware';
-import { createDb } from '../db/client';
+import { getDb } from '../db/factory';
 import { SlugTakenError, createEvent } from '../features/admin/application/create-event';
 import {
   ForbiddenError,
@@ -30,14 +30,14 @@ adminRoutes.use('*', requireAuth(), requireAdmin());
 
 adminRoutes.get('/events', async (c) => {
   const user = getUser(c);
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   const events = await listOwnedEvents({ events: ownedEventsRepo(db) }, { ownerId: user.profileId });
   return c.json({ events });
 });
 
 adminRoutes.get('/events/:id/feedbacks', async (c) => {
   const user = getUser(c);
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   try {
     const feedbacks = await listEventFeedbacks(
       { events: ownedEventLookup(db), feedbacks: eventFeedbacksRepo(db) },
@@ -57,7 +57,7 @@ adminRoutes.post('/events', async (c) => {
   const parsed = createEventInput.safeParse(body);
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   try {
     const event = await createEvent(
       { events: eventRepo(db) },
@@ -72,7 +72,7 @@ adminRoutes.post('/events', async (c) => {
 
 adminRoutes.delete('/feedbacks/:id', async (c) => {
   const user = getUser(c);
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   try {
     await deleteFeedbackAsAdmin(
       { feedbacks: feedbackOwnership(db) },
@@ -88,7 +88,7 @@ adminRoutes.delete('/feedbacks/:id', async (c) => {
 
 adminRoutes.delete('/profiles/:id', async (c) => {
   const user = getUser(c);
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   try {
     await deleteProfileAsAdmin(
       { profiles: profileOwnership(db) },

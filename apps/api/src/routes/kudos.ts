@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { submitKudoInput } from '@fastkudos/shared';
 import { requireAuth, getUser, type AuthContext } from '../auth/middleware';
-import { createDb } from '../db/client';
+import { getDb } from '../db/factory';
 import {
   AuthorizationError,
   NotFoundError,
@@ -22,7 +22,7 @@ kudoRoutes.post('/', async (c) => {
     return c.json({ error: 'invalid_input', issues: parsed.error.issues }, 400);
   }
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = getDb(c.env);
   try {
     const feedback = await submitKudo(
       {
