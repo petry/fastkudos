@@ -20,7 +20,7 @@ function setup(overrides?: { cached?: { token: string; profile: Profile } | null
   render(
     <MemoryRouter initialEntries={['/e/demo']}>
       <Routes>
-        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
+        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -53,6 +53,23 @@ describe('<OnboardingPage>', () => {
     expect(screen.queryByText('/e/demo')).not.toBeInTheDocument();
   });
 
+  it('mostra link Caixa de recados à esquerda do botão Sair', () => {
+    setup({
+      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false } },
+    });
+    const inboxLink = screen.getByRole('link', { name: /caixa de recados/i });
+    expect(inboxLink).toHaveAttribute('href', '/e/demo/inbox');
+    const leave = screen.getByRole('button', { name: /sair/i });
+    expect(inboxLink.compareDocumentPosition(leave) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('não renderiza a caixa de recados na home do evento', () => {
+    setup({
+      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false } },
+    });
+    expect(screen.queryByText(/sua caixa de recados/i)).not.toBeInTheDocument();
+  });
+
   it('exibe erro quando o gateway falha', async () => {
     const user = userEvent.setup();
     const session: SessionStore = { save: vi.fn(), load: vi.fn(() => null) };
@@ -64,7 +81,7 @@ describe('<OnboardingPage>', () => {
     render(
       <MemoryRouter initialEntries={['/e/demo']}>
         <Routes>
-          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} inbox={{ list: async () => [] }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
+          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
         </Routes>
       </MemoryRouter>,
     );

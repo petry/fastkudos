@@ -6,6 +6,7 @@ import { localSessionStore } from './features/onboarding/infra/local-session-sto
 import { httpParticipantsGateway } from './features/participants/infra/http-participants-gateway';
 import { httpKudosGateway } from './features/kudos/infra/http-kudos-gateway';
 import { httpInboxGateway } from './features/inbox/infra/http-inbox-gateway';
+import { InboxPage } from './features/inbox/ui/InboxPage';
 import { httpMuralGateway } from './features/mural/infra/http-mural-gateway';
 import { websocketStream } from './features/mural/infra/websocket-stream';
 import { AdminLoginPage } from './features/admin/ui/AdminLoginPage';
@@ -41,11 +42,14 @@ export function App() {
             session={session}
             participants={participants}
             kudos={kudos}
-            inbox={inbox}
             stream={stream}
             mural={mural}
           />
         }
+      />
+      <Route
+        path="/e/:slug/inbox"
+        element={<InboxPage session={session} participants={participants} inbox={inbox} />}
       />
       <Route path="/admin/login" element={<AdminLoginRoute />} />
       <Route

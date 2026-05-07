@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowRight, LogOut, MessageCircle, Sparkles, Users } from 'lucide-react';
 import type { Profile } from '@fastkudos/shared';
@@ -8,8 +8,6 @@ import type { AuthGateway, SessionStore } from '../domain/ports';
 import { ParticipantsList } from '../../participants/ui/ParticipantsList';
 import type { EventSummary, ParticipantsGateway } from '../../participants/domain/ports';
 import type { KudosGateway } from '../../kudos/domain/ports';
-import { InboxList } from '../../inbox/ui/InboxList';
-import type { InboxGateway } from '../../inbox/domain/ports';
 import { MuralFeed } from '../../mural/ui/MuralFeed';
 import type { EventStream, MuralGateway } from '../../mural/domain/ports';
 import { useKudoToasts } from '../../mural/ui/useKudoToasts';
@@ -21,7 +19,6 @@ export interface OnboardingPageProps {
   session: SessionStore;
   participants: ParticipantsGateway;
   kudos: KudosGateway;
-  inbox: InboxGateway;
   stream: EventStream;
   mural: MuralGateway;
   onJoined?: (s: { token: string; profile: Profile }) => void;
@@ -139,7 +136,6 @@ function JoinedView({
   joined,
   participants,
   kudos,
-  inbox,
   stream,
   mural,
   notify,
@@ -206,6 +202,13 @@ function JoinedView({
               Olá, {joined.profile.displayName}!
             </p>
           </div>
+          <Link
+            to={`/e/${slug}/inbox`}
+            className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-white/25"
+          >
+            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+            Caixa de recados
+          </Link>
           <button
             type="button"
             onClick={onLeave}
@@ -235,13 +238,6 @@ function JoinedView({
                 kudos={kudos}
               />
             )}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader title="Sua caixa de recados" icon={MessageCircle} />
-          <div className="mt-3">
-            <InboxList token={joined.token} gateway={inbox} profilesById={profilesById} />
           </div>
         </section>
 
