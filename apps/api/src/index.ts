@@ -4,6 +4,7 @@ import { authRoutes } from './routes/auth';
 import { eventRoutes } from './routes/events';
 import { kudoRoutes } from './routes/kudos';
 import { inboxRoutes } from './routes/inbox';
+import { adminRoutes } from './routes/admin';
 
 export { EventChannel } from './realtime/event-channel';
 
@@ -23,5 +24,6 @@ app.route('/auth', authRoutes);
 app.route('/events', eventRoutes);
 app.route('/kudos', kudoRoutes);
 app.route('/inbox', inboxRoutes);
+app.route('/admin', adminRoutes);
 
 export default app;

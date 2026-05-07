@@ -42,3 +42,11 @@ export function getUser(c: Context<AuthContext>): AuthUser {
   if (!user) throw new Error('rota sem requireAuth() tentou ler user');
   return user;
 }
+
+export function requireAdmin(): MiddlewareHandler<AuthContext> {
+  return async (c, next) => {
+    const user = c.get('user');
+    if (!user || !user.isAdmin) return c.json({ error: 'forbidden' }, 403);
+    await next();
+  };
+}
