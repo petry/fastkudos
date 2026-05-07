@@ -1,4 +1,5 @@
 import type { Feedback } from '@fastkudos/shared';
+import type { Actor } from '../domain/actor';
 
 export class NotFoundError extends Error {}
 export class ForbiddenError extends Error {}
@@ -13,10 +14,10 @@ export interface EventFeedbacksRepo {
 
 export async function listEventFeedbacks(
   deps: { events: OwnedEventLookup; feedbacks: EventFeedbacksRepo },
-  cmd: { eventId: string; adminId: string },
+  cmd: { eventId: string; actor: Actor },
 ): Promise<Feedback[]> {
   const owner = await deps.events.ownerOfEvent(cmd.eventId);
   if (owner === null) throw new NotFoundError();
-  if (owner !== cmd.adminId) throw new ForbiddenError();
+  if (cmd.actor.role !== 'superadmin' && owner !== cmd.actor.id) throw new ForbiddenError();
   return deps.feedbacks.listByEvent(cmd.eventId);
 }

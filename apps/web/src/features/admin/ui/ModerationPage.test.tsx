@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { Feedback, Profile } from '@fastkudos/shared';
 import { ModerationPage } from './ModerationPage';
-import type { AdminEventsGateway, AdminSessionStore } from '../domain/ports';
+import type { LoggedSessionStore, OwnedEventsGateway } from '../domain/ports';
 
 const fb = (id: string, content: string): Feedback => ({
   id,
@@ -23,7 +23,7 @@ const profile = (id: string, displayName: string): Profile => ({
 });
 
 function setup(opts?: { feedbacks?: Feedback[]; profiles?: Profile[] }) {
-  const gateway: AdminEventsGateway = {
+  const gateway: OwnedEventsGateway = {
     create: vi.fn(),
     list: vi.fn(),
     update: vi.fn(),
@@ -33,16 +33,25 @@ function setup(opts?: { feedbacks?: Feedback[]; profiles?: Profile[] }) {
     profiles: vi.fn(async () => opts?.profiles ?? []),
     deleteProfile: vi.fn(async () => {}),
   };
-  const session: AdminSessionStore = {
+  const session: LoggedSessionStore = {
     save: vi.fn(),
-    load: vi.fn(() => ({ token: 'tok', admin: { id: 'a1', email: 'admin@x' } })),
+    load: vi.fn(() => ({
+      token: 'tok',
+      user: {
+        id: 'a1',
+        email: 'admin@x',
+        name: 'Admin',
+        avatarUrl: null,
+        role: 'user' as const,
+      },
+    })),
     clear: vi.fn(),
   };
   render(
-    <MemoryRouter initialEntries={['/admin/events/e1']}>
+    <MemoryRouter initialEntries={['/dashboard/events/e1']}>
       <Routes>
         <Route
-          path="/admin/events/:id"
+          path="/dashboard/events/:id"
           element={<ModerationPage session={session} gateway={gateway} />}
         />
       </Routes>

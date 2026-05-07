@@ -32,12 +32,12 @@ describe('jwt anon (formato)', () => {
     const { signJwt } = await import('../auth/jwt');
     const secret = 'test-secret-test-secret-test-secret';
     const token = await signJwt(
-      { sub: 'p1', event_id: 'e1', display_name: 'Alice', is_admin: false },
+      { sub: 'p1', kind: 'anon', event_id: 'e1', display_name: 'Alice' },
       secret,
       60,
     );
     const claims = await verifyJwt(token, secret);
-    expect(claims.is_admin).toBe(false);
+    expect(claims.kind).toBe('anon');
     expect(claims.event_id).toBe('e1');
   });
 });

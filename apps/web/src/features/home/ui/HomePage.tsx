@@ -140,7 +140,7 @@ export function HomePage() {
         <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-4 text-sm text-slate-500 md:flex-row">
           <p>FastKudos · feito para celebrar pessoas em eventos</p>
           <Link
-            to="/admin/login"
+            to="/login"
             className="inline-flex items-center gap-1 font-medium text-sky-700 hover:text-sky-800"
           >
             Sou organizador

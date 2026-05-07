@@ -6,7 +6,8 @@ import { eventRoutes } from './routes/events';
 import { kudoRoutes } from './routes/kudos';
 import { inboxRoutes } from './routes/inbox';
 import { muralRoutes } from './routes/mural';
-import { adminRoutes } from './routes/admin';
+import { meEventsRoutes } from './routes/me-events';
+import { superadminRoutes } from './routes/superadmin';
 
 export { EventChannel } from './realtime/event-channel';
 
@@ -16,6 +17,10 @@ export interface Env {
   /** Lista de origens separada por vírgula. Quando ausente, libera tudo (apenas dev). */
   ALLOWED_ORIGINS?: string;
   EVENT_CHANNEL: DurableObjectNamespace;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
+  OAUTH_REDIRECT_URI: string;
+  WEB_BASE_URL: string;
   /** Apenas para testes de integração — produção usa o driver Neon. */
   DB_OVERRIDE?: Database;
 }
@@ -39,6 +44,7 @@ app.route('/events', eventRoutes);
 app.route('/kudos', kudoRoutes);
 app.route('/inbox', inboxRoutes);
 app.route('/mural', muralRoutes);
-app.route('/admin', adminRoutes);
+app.route('/me', meEventsRoutes);
+app.route('/superadmin', superadminRoutes);
 
 export default app;

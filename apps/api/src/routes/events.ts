@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { requireAuth, getUser, type AuthContext } from '../auth/middleware';
+import { requireAuth, requireAnon, getAnonUser, type AuthContext } from '../auth/middleware';
 import { verifyJwt } from '../auth/jwt';
 import { getDb } from '../db/factory';
 import {
@@ -37,10 +37,10 @@ eventRoutes.get('/:slug/stream', async (c) => {
   return stub.fetch('https://channel/connect', { headers: { Upgrade: 'websocket' } });
 });
 
-eventRoutes.use('*', requireAuth());
+eventRoutes.use('*', requireAuth(), requireAnon());
 
 eventRoutes.get('/:slug/profiles', async (c) => {
-  const user = getUser(c);
+  const user = getAnonUser(c);
   const slug = c.req.param('slug');
   const db = getDb(c.env);
 

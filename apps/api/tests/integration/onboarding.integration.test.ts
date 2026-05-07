@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { hashPassword } from '../../src/auth/password';
 import { signJwt } from '../../src/auth/jwt';
 import app from '../../src/index';
-import { adminUsers, events, profiles } from '../../drizzle/schema';
+import { events, profiles, users } from '../../drizzle/schema';
 import { startIntegration, type IntegrationCtx } from './setup';
 
 let ctx: IntegrationCtx;
@@ -14,6 +13,10 @@ function envFor() {
     DATABASE_URL: 'unused',
     JWT_SECRET: SECRET,
     EVENT_CHANNEL: { idFromName: () => ({}), get: () => ({ fetch: async () => new Response() }) } as never,
+    GOOGLE_CLIENT_ID: 'test-client',
+    GOOGLE_CLIENT_SECRET: 'test-secret',
+    OAUTH_REDIRECT_URI: 'http://local/auth/google/callback',
+    WEB_BASE_URL: 'http://local-web',
     DB_OVERRIDE: ctx.db,
   };
 }
@@ -30,16 +33,27 @@ beforeEach(async () => {
   await ctx.reset();
 });
 
-async function seedEvent(slug: string) {
-  const [admin] = await ctx.db
-    .insert(adminUsers)
-    .values({ email: `${slug}@x.com`, passwordHash: await hashPassword('senha-segura') })
+async function seedOwner(email: string, role: 'user' | 'superadmin' = 'user') {
+  const [u] = await ctx.db
+    .insert(users)
+    .values({
+      email,
+      name: email,
+      role,
+      oauthProvider: 'google',
+      oauthSub: `sub-${email}`,
+    })
     .returning();
+  return u!;
+}
+
+async function seedEvent(slug: string) {
+  const owner = await seedOwner(`${slug}@x.com`);
   const [event] = await ctx.db
     .insert(events)
-    .values({ name: slug, slug, ownerId: admin!.id })
+    .values({ name: slug, slug, ownerId: owner.id })
     .returning();
-  return { admin: admin!, event: event! };
+  return { owner, event: event! };
 }
 
 describe('integração: onboarding + listagem + autorização', () => {
@@ -86,12 +100,11 @@ describe('integração: onboarding + listagem + autorização', () => {
     await ctx.db.insert(profiles).values({ displayName: 'Bob', eventId: b.event.id });
 
     const tokenA = await signJwt(
-      { sub: pa!.id, event_id: a.event.id, display_name: 'Alice', is_admin: false },
+      { sub: pa!.id, kind: 'anon', event_id: a.event.id, display_name: 'Alice' },
       SECRET,
       60,
     );
 
-    // caller pertence ao evento A → consegue listar A
     const ok = await app.request(
       `http://local/events/event-a/profiles`,
       { headers: { authorization: `Bearer ${tokenA}` } },
@@ -105,7 +118,6 @@ describe('integração: onboarding + listagem + autorização', () => {
     expect(okBody.event).toEqual({ id: a.event.id, name: 'event-a', slug: 'event-a' });
     expect(okBody.profiles.map((p) => p.displayName)).toEqual(['Alice']);
 
-    // caller pertence a A mas tenta listar B → 403
     const forbidden = await app.request(
       `http://local/events/event-b/profiles`,
       { headers: { authorization: `Bearer ${tokenA}` } },
@@ -126,12 +138,12 @@ describe('integração: onboarding + listagem + autorização', () => {
       .returning();
 
     const senderToken = await signJwt(
-      { sub: sender!.id, event_id: a.event.id, display_name: 'Sender', is_admin: false },
+      { sub: sender!.id, kind: 'anon', event_id: a.event.id, display_name: 'Sender' },
       SECRET,
       60,
     );
     const receiverToken = await signJwt(
-      { sub: receiver!.id, event_id: a.event.id, display_name: 'Receiver', is_admin: false },
+      { sub: receiver!.id, kind: 'anon', event_id: a.event.id, display_name: 'Receiver' },
       SECRET,
       60,
     );
@@ -183,7 +195,7 @@ describe('integração: onboarding + listagem + autorização', () => {
     ]);
 
     const tokenA = await signJwt(
-      { sub: pa1!.id, event_id: a.event.id, display_name: 'A1', is_admin: false },
+      { sub: pa1!.id, kind: 'anon', event_id: a.event.id, display_name: 'A1' },
       SECRET,
       60,
     );
@@ -211,7 +223,7 @@ describe('integração: onboarding + listagem + autorização', () => {
       .returning();
 
     const token = await signJwt(
-      { sub: sender!.id, event_id: a.event.id, display_name: 'S', is_admin: false },
+      { sub: sender!.id, kind: 'anon', event_id: a.event.id, display_name: 'S' },
       SECRET,
       60,
     );
@@ -228,52 +240,152 @@ describe('integração: onboarding + listagem + autorização', () => {
   });
 });
 
-describe('integração: admin', () => {
-  it('POST /auth/login emite JWT admin e POST /admin/events cria evento; admin de outro owner não pode apagar', async () => {
-    // admin 1
-    const hash = await hashPassword('s3nh@-segura');
-    const [adm] = await ctx.db
-      .insert(adminUsers)
-      .values({ email: 'admin@x.com', passwordHash: hash })
-      .returning();
+describe('integração: auto-registro de user logado (event-join)', () => {
+  async function userToken(userId: string, name: string) {
+    return signJwt(
+      { sub: userId, kind: 'user', role: 'user', event_id: '', display_name: name },
+      SECRET,
+      60,
+    );
+  }
 
-    const login = await app.request(
-      'http://local/auth/login',
+  it('cria profile com user_id na primeira chamada e é idempotente na segunda', async () => {
+    const e = await seedEvent('event-join-demo');
+    // O dono do evento (criado por seedEvent) também participa.
+    const token = await userToken(e.owner.id, e.owner.name);
+
+    const first = await app.request(
+      'http://local/auth/event-join',
       {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@x.com', password: 's3nh@-segura' }),
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'event-join-demo' }),
       },
       envFor(),
     );
-    expect(login.status).toBe(200);
-    const { token: adminToken } = (await login.json()) as { token: string };
+    expect(first.status).toBe(201);
+    const firstBody = (await first.json()) as { token: string; profile: { id: string; eventId: string } };
+    expect(firstBody.profile.eventId).toBe(e.event.id);
 
-    const create = await app.request(
-      'http://local/admin/events',
+    const rows = await ctx.db.select().from(profiles).where(eq(profiles.eventId, e.event.id));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.userId).toBe(e.owner.id);
+
+    // Segunda chamada → mesmo profile.id, sem criar duplicata.
+    const second = await app.request(
+      'http://local/auth/event-join',
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${adminToken}`, 'content-type': 'application/json' },
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'event-join-demo' }),
+      },
+      envFor(),
+    );
+    expect(second.status).toBe(201);
+    const secondBody = (await second.json()) as { profile: { id: string } };
+    expect(secondBody.profile.id).toBe(firstBody.profile.id);
+
+    const rowsAfter = await ctx.db.select().from(profiles).where(eq(profiles.eventId, e.event.id));
+    expect(rowsAfter).toHaveLength(1);
+  });
+
+  it('retorna 404 quando o slug não existe', async () => {
+    const stranger = await seedOwner('stranger@x.com');
+    const token = await userToken(stranger.id, stranger.name);
+    const res = await app.request(
+      'http://local/auth/event-join',
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'inexistente' }),
+      },
+      envFor(),
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it('rejeita anônimo (kind=anon) com 403', async () => {
+    const e = await seedEvent('anon-not-allowed');
+    const anonToken = await signJwt(
+      { sub: 'fake-profile', kind: 'anon', event_id: e.event.id, display_name: 'X' },
+      SECRET,
+      60,
+    );
+    const res = await app.request(
+      'http://local/auth/event-join',
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${anonToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'anon-not-allowed' }),
+      },
+      envFor(),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('JWT retornado tem kind=anon e funciona em POST /kudos', async () => {
+    const e = await seedEvent('event-join-kudos');
+    const token = await userToken(e.owner.id, e.owner.name);
+
+    const join = await app.request(
+      'http://local/auth/event-join',
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'event-join-kudos' }),
+      },
+      envFor(),
+    );
+    const joinBody = (await join.json()) as { token: string; profile: { id: string } };
+
+    // Outro participante anônimo no mesmo evento, para servir de receiver.
+    const [other] = await ctx.db
+      .insert(profiles)
+      .values({ displayName: 'Outro', eventId: e.event.id })
+      .returning();
+
+    const sent = await app.request(
+      'http://local/kudos',
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${joinBody.token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ receiverId: other!.id, content: 'oi pessoal' }),
+      },
+      envFor(),
+    );
+    expect(sent.status).toBe(201);
+  });
+});
+
+describe('integração: gerenciamento de eventos', () => {
+  async function tokenFor(userId: string, name: string, role: 'user' | 'superadmin' = 'user') {
+    return signJwt(
+      { sub: userId, kind: 'user', role, event_id: '', display_name: name },
+      SECRET,
+      60,
+    );
+  }
+
+  it('POST /me/events cria evento; outro user não pode apagar feedback alheio', async () => {
+    const owner = await seedOwner('owner@x.com');
+    const ownerToken = await tokenFor(owner.id, 'owner@x.com');
+
+    const create = await app.request(
+      'http://local/me/events',
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${ownerToken}`, 'content-type': 'application/json' },
         body: JSON.stringify({ name: 'Demo', slug: 'demo' }),
       },
       envFor(),
     );
     expect(create.status).toBe(201);
 
-    // outro admin tenta apagar feedback do evento do primeiro
-    const [admin2] = await ctx.db
-      .insert(adminUsers)
-      .values({ email: 'other@x.com', passwordHash: await hashPassword('outra-senha') })
-      .returning();
-    const otherAdminToken = await signJwt(
-      { sub: admin2!.id, event_id: '', display_name: 'other@x.com', is_admin: true },
-      SECRET,
-      60,
-    );
+    const otherUser = await seedOwner('other@x.com');
+    const otherToken = await tokenFor(otherUser.id, 'other@x.com');
 
-    // cria um feedback no evento do admin 1
-    const events = (await ctx.db.select().from((await import('../../drizzle/schema')).events));
-    const eventId = events[0]!.id;
+    const eventsRows = await ctx.db.select().from(events);
+    const eventId = eventsRows[0]!.id;
     const [p1] = await ctx.db.insert(profiles).values({ displayName: 'A', eventId }).returning();
     const [p2] = await ctx.db.insert(profiles).values({ displayName: 'B', eventId }).returning();
     const { feedbacks } = await import('../../drizzle/schema');
@@ -283,15 +395,15 @@ describe('integração: admin', () => {
       .returning();
 
     const forbidden = await app.request(
-      `http://local/admin/feedbacks/${fb!.id}`,
-      { method: 'DELETE', headers: { authorization: `Bearer ${otherAdminToken}` } },
+      `http://local/me/feedbacks/${fb!.id}`,
+      { method: 'DELETE', headers: { authorization: `Bearer ${otherToken}` } },
       envFor(),
     );
     expect(forbidden.status).toBe(403);
 
     const ok = await app.request(
-      `http://local/admin/feedbacks/${fb!.id}`,
-      { method: 'DELETE', headers: { authorization: `Bearer ${adminToken}` } },
+      `http://local/me/feedbacks/${fb!.id}`,
+      { method: 'DELETE', headers: { authorization: `Bearer ${ownerToken}` } },
       envFor(),
     );
     expect(ok.status).toBe(204);
@@ -300,27 +412,44 @@ describe('integração: admin', () => {
     expect(remaining).toHaveLength(0);
   });
 
-  it('PATCH /admin/events/:id atualiza nome/slug do dono e nega para outro admin', async () => {
-    // admin 1 dono do evento
-    const [adm1] = await ctx.db
-      .insert(adminUsers)
-      .values({ email: 'a1@x.com', passwordHash: await hashPassword('s3nh@-segura') })
-      .returning();
+  it('superadmin apaga feedback de evento alheio (bypass de owner)', async () => {
+    const owner = await seedOwner('owner@x.com');
+    const root = await seedOwner('root@x.com', 'superadmin');
+    const rootToken = await tokenFor(root.id, 'root@x.com', 'superadmin');
+
     const [ev] = await ctx.db
       .insert(events)
-      .values({ name: 'Antigo', slug: 'antigo', ownerId: adm1!.id })
+      .values({ name: 'Demo', slug: 'demo-su', ownerId: owner.id })
       .returning();
-    const adm1Token = await signJwt(
-      { sub: adm1!.id, event_id: '', display_name: 'a1@x.com', is_admin: true },
-      SECRET,
-      60,
-    );
+    const [p1] = await ctx.db.insert(profiles).values({ displayName: 'A', eventId: ev!.id }).returning();
+    const [p2] = await ctx.db.insert(profiles).values({ displayName: 'B', eventId: ev!.id }).returning();
+    const { feedbacks } = await import('../../drizzle/schema');
+    const [fb] = await ctx.db
+      .insert(feedbacks)
+      .values({ senderId: p1!.id, receiverId: p2!.id, eventId: ev!.id, content: 'mod' })
+      .returning();
 
     const ok = await app.request(
-      `http://local/admin/events/${ev!.id}`,
+      `http://local/me/feedbacks/${fb!.id}`,
+      { method: 'DELETE', headers: { authorization: `Bearer ${rootToken}` } },
+      envFor(),
+    );
+    expect(ok.status).toBe(204);
+  });
+
+  it('PATCH /me/events/:id atualiza nome/slug do dono e nega para outro user', async () => {
+    const owner = await seedOwner('a1@x.com');
+    const [ev] = await ctx.db
+      .insert(events)
+      .values({ name: 'Antigo', slug: 'antigo', ownerId: owner.id })
+      .returning();
+    const ownerToken = await tokenFor(owner.id, 'a1@x.com');
+
+    const ok = await app.request(
+      `http://local/me/events/${ev!.id}`,
       {
         method: 'PATCH',
-        headers: { authorization: `Bearer ${adm1Token}`, 'content-type': 'application/json' },
+        headers: { authorization: `Bearer ${ownerToken}`, 'content-type': 'application/json' },
         body: JSON.stringify({ name: 'Novo', slug: 'novo' }),
       },
       envFor(),
@@ -329,21 +458,13 @@ describe('integração: admin', () => {
     const body = (await ok.json()) as { event: { name: string; slug: string } };
     expect(body.event).toMatchObject({ name: 'Novo', slug: 'novo' });
 
-    // admin 2 não dono → 403 ao editar
-    const [adm2] = await ctx.db
-      .insert(adminUsers)
-      .values({ email: 'a2@x.com', passwordHash: await hashPassword('outra-senha') })
-      .returning();
-    const adm2Token = await signJwt(
-      { sub: adm2!.id, event_id: '', display_name: 'a2@x.com', is_admin: true },
-      SECRET,
-      60,
-    );
+    const stranger = await seedOwner('a2@x.com');
+    const strangerToken = await tokenFor(stranger.id, 'a2@x.com');
     const forbidden = await app.request(
-      `http://local/admin/events/${ev!.id}`,
+      `http://local/me/events/${ev!.id}`,
       {
         method: 'PATCH',
-        headers: { authorization: `Bearer ${adm2Token}`, 'content-type': 'application/json' },
+        headers: { authorization: `Bearer ${strangerToken}`, 'content-type': 'application/json' },
         body: JSON.stringify({ name: 'Hack' }),
       },
       envFor(),
@@ -351,56 +472,34 @@ describe('integração: admin', () => {
     expect(forbidden.status).toBe(403);
   });
 
-  it('DELETE /admin/events/:id apaga em cascata profiles e feedbacks; nega para outro admin', async () => {
+  it('DELETE /me/events/:id apaga em cascata; nega para outro user', async () => {
     const { feedbacks } = await import('../../drizzle/schema');
 
-    const [adm1] = await ctx.db
-      .insert(adminUsers)
-      .values({ email: 'owner@x.com', passwordHash: await hashPassword('s3nh@-segura') })
-      .returning();
+    const owner = await seedOwner('owner-del@x.com');
     const [ev] = await ctx.db
       .insert(events)
-      .values({ name: 'Demo', slug: 'demo-del', ownerId: adm1!.id })
+      .values({ name: 'Demo', slug: 'demo-del', ownerId: owner.id })
       .returning();
-    const [p1] = await ctx.db
-      .insert(profiles)
-      .values({ displayName: 'A', eventId: ev!.id })
-      .returning();
-    const [p2] = await ctx.db
-      .insert(profiles)
-      .values({ displayName: 'B', eventId: ev!.id })
-      .returning();
+    const [p1] = await ctx.db.insert(profiles).values({ displayName: 'A', eventId: ev!.id }).returning();
+    const [p2] = await ctx.db.insert(profiles).values({ displayName: 'B', eventId: ev!.id }).returning();
     await ctx.db
       .insert(feedbacks)
       .values({ senderId: p1!.id, receiverId: p2!.id, eventId: ev!.id, content: 'top' });
 
-    const adm1Token = await signJwt(
-      { sub: adm1!.id, event_id: '', display_name: 'owner@x.com', is_admin: true },
-      SECRET,
-      60,
-    );
+    const ownerToken = await tokenFor(owner.id, 'owner-del@x.com');
 
-    // outro admin → 403
-    const [adm2] = await ctx.db
-      .insert(adminUsers)
-      .values({ email: 'outro@x.com', passwordHash: await hashPassword('outra-senha') })
-      .returning();
-    const adm2Token = await signJwt(
-      { sub: adm2!.id, event_id: '', display_name: 'outro@x.com', is_admin: true },
-      SECRET,
-      60,
-    );
+    const stranger = await seedOwner('outro@x.com');
+    const strangerToken = await tokenFor(stranger.id, 'outro@x.com');
     const forbidden = await app.request(
-      `http://local/admin/events/${ev!.id}`,
-      { method: 'DELETE', headers: { authorization: `Bearer ${adm2Token}` } },
+      `http://local/me/events/${ev!.id}`,
+      { method: 'DELETE', headers: { authorization: `Bearer ${strangerToken}` } },
       envFor(),
     );
     expect(forbidden.status).toBe(403);
 
-    // dono apaga → 204 + cascata limpa profiles e feedbacks
     const ok = await app.request(
-      `http://local/admin/events/${ev!.id}`,
-      { method: 'DELETE', headers: { authorization: `Bearer ${adm1Token}` } },
+      `http://local/me/events/${ev!.id}`,
+      { method: 'DELETE', headers: { authorization: `Bearer ${ownerToken}` } },
       envFor(),
     );
     expect(ok.status).toBe(204);
@@ -417,5 +516,130 @@ describe('integração: admin', () => {
       .from(feedbacks)
       .where(eq(feedbacks.eventId, ev!.id));
     expect(remainingFeedbacks).toHaveLength(0);
+  });
+});
+
+describe('integração: superadmin', () => {
+  async function tokenFor(userId: string, name: string, role: 'user' | 'superadmin') {
+    return signJwt(
+      { sub: userId, kind: 'user', role, event_id: '', display_name: name },
+      SECRET,
+      60,
+    );
+  }
+
+  it('GET /superadmin/events lista todos eventos', async () => {
+    const root = await seedOwner('root@x.com', 'superadmin');
+    const owner = await seedOwner('owner@x.com');
+    await ctx.db.insert(events).values([
+      { name: 'A', slug: 'a-sa', ownerId: owner.id },
+      { name: 'B', slug: 'b-sa', ownerId: root.id },
+    ]);
+    const rootToken = await tokenFor(root.id, 'root@x.com', 'superadmin');
+
+    const res = await app.request(
+      'http://local/superadmin/events',
+      { headers: { authorization: `Bearer ${rootToken}` } },
+      envFor(),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { events: Array<{ slug: string }> };
+    expect(body.events.map((e) => e.slug).sort()).toEqual(['a-sa', 'b-sa']);
+  });
+
+  it('user comum recebe 403 em rotas /superadmin', async () => {
+    const u = await seedOwner('u@x.com');
+    const t = await tokenFor(u.id, 'u@x.com', 'user');
+    const res = await app.request(
+      'http://local/superadmin/events',
+      { headers: { authorization: `Bearer ${t}` } },
+      envFor(),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('PATCH /superadmin/users/:id promove user e bloqueia rebaixar último superadmin', async () => {
+    const root = await seedOwner('root@x.com', 'superadmin');
+    const target = await seedOwner('target@x.com');
+    const rootToken = await tokenFor(root.id, 'root@x.com', 'superadmin');
+
+    const promote = await app.request(
+      `http://local/superadmin/users/${target.id}`,
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${rootToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'superadmin' }),
+      },
+      envFor(),
+    );
+    expect(promote.status).toBe(200);
+
+    // Agora rebaixa o target — restou um superadmin (root).
+    const demoteOk = await app.request(
+      `http://local/superadmin/users/${target.id}`,
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${rootToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'user' }),
+      },
+      envFor(),
+    );
+    expect(demoteOk.status).toBe(200);
+
+    // Tentar rebaixar root (último superadmin) → 409.
+    const lastFail = await app.request(
+      `http://local/superadmin/users/${root.id}`,
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${rootToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ role: 'user' }),
+      },
+      envFor(),
+    );
+    expect(lastFail.status).toBe(409);
+  });
+});
+
+describe('integração: migração legacy', () => {
+  it('login OAuth promove user com oauth_provider=legacy preservando id e role superadmin', async () => {
+    // Seed simulando o estado pós-migração: admin antigo virou user com provider='legacy'.
+    const [legacy] = await ctx.db
+      .insert(users)
+      .values({
+        email: 'old-admin@x.com',
+        name: 'old-admin@x.com',
+        role: 'superadmin',
+        oauthProvider: 'legacy',
+        oauthSub: 'legacy-old-admin',
+      })
+      .returning();
+    const [ev] = await ctx.db
+      .insert(events)
+      .values({ name: 'Antigo', slug: 'antigo-evento', ownerId: legacy!.id })
+      .returning();
+
+    // Importa o use case e verifica que ao "logar" com Google promove o registro.
+    const { loginWithOauth } = await import('../../src/features/auth/application/login-with-oauth');
+    const { userRepo } = await import('../../src/features/auth/infra/repos');
+
+    const promoted = await loginWithOauth(
+      { users: userRepo(ctx.db) },
+      {
+        provider: 'google',
+        sub: 'google-real-sub',
+        email: 'old-admin@x.com',
+        name: 'Old Admin',
+        avatarUrl: 'https://avatar/o.png',
+      },
+    );
+    expect(promoted.id).toBe(legacy!.id);
+    expect(promoted.role).toBe('superadmin');
+    expect(promoted.oauthProvider).toBe('google');
+    expect(promoted.oauthSub).toBe('google-real-sub');
+
+    // events.owner_id continua válido após promoção (o id não mudou).
+    const stillThere = await ctx.db.select().from(events).where(eq(events.id, ev!.id));
+    expect(stillThere).toHaveLength(1);
+    expect(stillThere[0]!.ownerId).toBe(legacy!.id);
   });
 });

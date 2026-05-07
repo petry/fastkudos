@@ -4,9 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import type { Event } from '@fastkudos/shared';
 import { EventsList } from './EventsList';
-import type { AdminEventsGateway } from '../domain/ports';
+import type { OwnedEventsGateway } from '../domain/ports';
 
-function gw(events: Event[] = [], overrides: Partial<AdminEventsGateway> = {}): AdminEventsGateway {
+function gw(events: Event[] = [], overrides: Partial<OwnedEventsGateway> = {}): OwnedEventsGateway {
   return {
     create: vi.fn(),
     list: vi.fn(async () => events),
@@ -32,7 +32,7 @@ describe('<EventsList>', () => {
     );
     await waitFor(() => screen.getByText('Demo'));
     const link = screen.getByRole('link', { name: /moderar/i });
-    expect(link).toHaveAttribute('href', '/admin/events/e1');
+    expect(link).toHaveAttribute('href', '/dashboard/events/e1');
   });
 
   it('mostra estado vazio', async () => {

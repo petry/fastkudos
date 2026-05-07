@@ -2,6 +2,8 @@ import type { Profile } from '@fastkudos/shared';
 
 export interface AuthGateway {
   registerAnon(input: { slug: string; displayName: string }): Promise<{ token: string; profile: Profile }>;
+  /** Auto-registro do user logado no evento, usando JWT user em Authorization. */
+  eventJoin(input: { slug: string; userToken: string }): Promise<{ token: string; profile: Profile }>;
 }
 
 export interface SessionStore {

@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { slugSchema } from '@fastkudos/shared';
-import type { AdminEventsGateway } from '../domain/ports';
+import type { OwnedEventsGateway } from '../domain/ports';
 
 export interface CreateEventFormProps {
   token: string;
-  gateway: AdminEventsGateway;
+  gateway: OwnedEventsGateway;
   onCreated?: (event: { id: string; slug: string; name: string }) => void;
 }
 

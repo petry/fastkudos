@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { slugSchema, type Event } from '@fastkudos/shared';
-import type { AdminEventsGateway } from '../domain/ports';
+import type { OwnedEventsGateway } from '../domain/ports';
 
 export interface EventsListProps {
   token: string;
-  gateway: AdminEventsGateway;
+  gateway: OwnedEventsGateway;
 }
 
 export function EventsList({ token, gateway }: EventsListProps) {
@@ -76,7 +76,7 @@ export function EventsList({ token, gateway }: EventsListProps) {
               {e.name} <code className="text-xs text-slate-500">/e/{e.slug}</code>
             </span>
             <span className="flex shrink-0 gap-3 text-sm">
-              <Link to={`/admin/events/${e.id}`} className="text-sky-700 underline">
+              <Link to={`/dashboard/events/${e.id}`} className="text-sky-700 underline">
                 Moderar
               </Link>
               <button

@@ -7,9 +7,8 @@ export const anonAuthInput = z.object({
   displayName: displayNameSchema,
 });
 
-export const adminLoginInput = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(200),
+export const eventJoinInput = z.object({
+  slug: slugSchema,
 });
 
 export const authResponse = z.object({
@@ -22,6 +21,18 @@ export const authResponse = z.object({
   }),
 });
 
+export const userRole = z.enum(['user', 'superadmin']);
+
+export const userSession = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  name: z.string(),
+  avatarUrl: z.string().nullable(),
+  role: userRole,
+});
+
 export type AnonAuthInput = z.infer<typeof anonAuthInput>;
-export type AdminLoginInput = z.infer<typeof adminLoginInput>;
+export type EventJoinInput = z.infer<typeof eventJoinInput>;
 export type AuthResponse = z.infer<typeof authResponse>;
+export type UserRole = z.infer<typeof userRole>;
+export type UserSession = z.infer<typeof userSession>;

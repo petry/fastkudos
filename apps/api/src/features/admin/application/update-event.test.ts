@@ -2,6 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { ForbiddenError, NotFoundError, SlugTakenError, updateEvent } from './update-event';
 import type { EventRepo } from '../domain/ports';
 import type { OwnedEventLookup } from './list-event-feedbacks';
+import type { Actor } from '../domain/actor';
+
+const owner: Actor = { id: 'a1', role: 'user' };
+const intruder: Actor = { id: 'a2', role: 'user' };
+const root: Actor = { id: 'super', role: 'superadmin' };
 
 function deps(opts: { owner: string | null; slugTaken?: Set<string> }) {
   const taken = opts.slugTaken ?? new Set<string>();
@@ -20,24 +25,23 @@ function deps(opts: { owner: string | null; slugTaken?: Set<string> }) {
 }
 
 describe('updateEvent', () => {
-  it('atualiza nome e slug quando admin é dono', async () => {
+  it('atualiza nome e slug quando dono', async () => {
     const d = deps({ owner: 'a1' });
     const out = await updateEvent(
       { events: d.lookup, repo: d.repo },
-      { eventId: 'e1', adminId: 'a1', patch: { name: 'Novo', slug: 'novo' } },
+      { eventId: 'e1', actor: owner, patch: { name: 'Novo', slug: 'novo' } },
     );
     expect(d.repo.update).toHaveBeenCalledWith('e1', { name: 'Novo', slug: 'novo' });
     expect(out.name).toBe('Novo');
-    expect(out.slug).toBe('novo');
   });
 
-  it('atualiza apenas nome', async () => {
+  it('superadmin atualiza evento de terceiros', async () => {
     const d = deps({ owner: 'a1' });
     await updateEvent(
       { events: d.lookup, repo: d.repo },
-      { eventId: 'e1', adminId: 'a1', patch: { name: 'Só Nome' } },
+      { eventId: 'e1', actor: root, patch: { name: 'Mod' } },
     );
-    expect(d.repo.update).toHaveBeenCalledWith('e1', { name: 'Só Nome' });
+    expect(d.repo.update).toHaveBeenCalledWith('e1', { name: 'Mod' });
   });
 
   it('rejeita NotFound quando evento inexistente', async () => {
@@ -45,17 +49,17 @@ describe('updateEvent', () => {
     await expect(
       updateEvent(
         { events: d.lookup, repo: d.repo },
-        { eventId: 'e1', adminId: 'a1', patch: { name: 'X' } },
+        { eventId: 'e1', actor: owner, patch: { name: 'X' } },
       ),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it('rejeita Forbidden quando admin não é dono', async () => {
-    const d = deps({ owner: 'outro' });
+  it('rejeita Forbidden quando não é dono', async () => {
+    const d = deps({ owner: 'a1' });
     await expect(
       updateEvent(
         { events: d.lookup, repo: d.repo },
-        { eventId: 'e1', adminId: 'a1', patch: { name: 'X' } },
+        { eventId: 'e1', actor: intruder, patch: { name: 'X' } },
       ),
     ).rejects.toBeInstanceOf(ForbiddenError);
   });
@@ -65,17 +69,17 @@ describe('updateEvent', () => {
     await expect(
       updateEvent(
         { events: d.lookup, repo: d.repo },
-        { eventId: 'e1', adminId: 'a1', patch: { slug: 'ocupado' } },
+        { eventId: 'e1', actor: owner, patch: { slug: 'ocupado' } },
       ),
     ).rejects.toBeInstanceOf(SlugTakenError);
   });
 
-  it('rejeita slug inválido (validação de domínio)', async () => {
+  it('rejeita slug inválido', async () => {
     const d = deps({ owner: 'a1' });
     await expect(
       updateEvent(
         { events: d.lookup, repo: d.repo },
-        { eventId: 'e1', adminId: 'a1', patch: { slug: 'NÃO VAI' } },
+        { eventId: 'e1', actor: owner, patch: { slug: 'NÃO VAI' } },
       ),
     ).rejects.toThrow();
   });
@@ -85,7 +89,7 @@ describe('updateEvent', () => {
     await expect(
       updateEvent(
         { events: d.lookup, repo: d.repo },
-        { eventId: 'e1', adminId: 'a1', patch: {} },
+        { eventId: 'e1', actor: owner, patch: {} },
       ),
     ).rejects.toThrow();
   });

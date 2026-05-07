@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Event, Profile } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
 import { events, profiles } from '../../../../drizzle/schema';
@@ -23,6 +23,20 @@ export function profileRepo(db: Database): ProfileRepo {
         .values({ displayName, eventId })
         .returning();
       return toProfile(inserted[0]!);
+    },
+    async findOrCreateForUser({ userId, eventId, displayName }) {
+      const inserted = await db
+        .insert(profiles)
+        .values({ userId, eventId, displayName })
+        .onConflictDoNothing({ target: [profiles.userId, profiles.eventId] })
+        .returning();
+      if (inserted[0]) return toProfile(inserted[0]);
+      const existing = await db
+        .select()
+        .from(profiles)
+        .where(and(eq(profiles.userId, userId), eq(profiles.eventId, eventId)))
+        .limit(1);
+      return toProfile(existing[0]!);
     },
   };
 }

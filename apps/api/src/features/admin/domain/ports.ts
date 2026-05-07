@@ -1,13 +1,3 @@
-export interface AdminUserRecord {
-  id: string;
-  email: string;
-  passwordHash: string;
-}
-
-export interface AdminUserRepo {
-  findByEmail(email: string): Promise<AdminUserRecord | null>;
-}
-
 export interface EventRepo {
   existsBySlug(slug: string): Promise<boolean>;
   create(input: { name: string; slug: string; ownerId: string }): Promise<{ id: string; slug: string; name: string }>;

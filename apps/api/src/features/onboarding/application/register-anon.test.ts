@@ -27,6 +27,9 @@ function makeDeps(overrides?: Partial<EventLookup>) {
       created.push(p);
       return p;
     },
+    findOrCreateForUser: async () => {
+      throw new Error('não usado neste teste');
+    },
   };
   const issued: Array<{ profileId: string; eventId: string; displayName: string }> = [];
   const tokens: TokenIssuer = {

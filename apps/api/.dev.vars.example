@@ -1,8 +1,17 @@
 # Variáveis lidas pelo `wrangler dev`. Copie para `.dev.vars` (git-ignored).
-# Em produção, use `wrangler secret put DATABASE_URL` / `JWT_SECRET`.
+# Em produção, use `wrangler secret put <NOME>` para cada uma.
 
 DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
 JWT_SECRET=local-dev-secret-troque-isso
+
+# Google OAuth — credenciais do Google Cloud Console (OAuth 2.0 Client ID).
+# O redirect URI cadastrado no console deve bater com OAUTH_REDIRECT_URI.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+OAUTH_REDIRECT_URI=http://localhost:8787/auth/google/callback
+
+# Base do frontend para onde o callback redireciona após emitir o JWT.
+WEB_BASE_URL=http://localhost:5173
 
 # Opcional. Lista separada por vírgula de origens permitidas para CORS.
 # Ausente = libera tudo (apenas dev). Em produção, sete via wrangler secret put

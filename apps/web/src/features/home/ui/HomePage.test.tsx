@@ -34,10 +34,10 @@ describe('<HomePage>', () => {
     expect(screen.getByText(/mandou super bem/i)).toBeInTheDocument();
   });
 
-  it('tem link para /admin/login', () => {
+  it('tem link para /login', () => {
     setup();
     const link = screen.getByRole('link', { name: /organizador/i });
-    expect(link).toHaveAttribute('href', '/admin/login');
+    expect(link).toHaveAttribute('href', '/login');
   });
 
   it('tem link "Fork me on GitHub" para o repositório', () => {

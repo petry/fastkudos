@@ -1,29 +1,19 @@
 import { desc, eq } from 'drizzle-orm';
 import type { Event, Feedback } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
-import { adminUsers, events, feedbacks, profiles } from '../../../../drizzle/schema';
+import { events, feedbacks, profiles } from '../../../../drizzle/schema';
 import type {
-  AdminUserRepo,
   EventRepo,
   FeedbackOwnership,
   ProfileOwnership,
 } from '../domain/ports';
 import type { OwnedEventsRepo } from '../application/list-owned-events';
+import type { AllEventsRepo } from '../application/list-all-events';
 import type {
   EventFeedbacksRepo,
   OwnedEventLookup,
 } from '../application/list-event-feedbacks';
 import type { EventProfilesRepo } from '../application/list-event-profiles';
-
-export function adminUserRepo(db: Database): AdminUserRepo {
-  return {
-    async findByEmail(email) {
-      const rows = await db.select().from(adminUsers).where(eq(adminUsers.email, email)).limit(1);
-      const row = rows[0];
-      return row ? { id: row.id, email: row.email, passwordHash: row.passwordHash } : null;
-    },
-  };
-}
 
 export function eventRepo(db: Database): EventRepo {
   return {
@@ -81,6 +71,16 @@ export function profileOwnership(db: Database): ProfileOwnership {
   };
 }
 
+function rowToEvent(r: typeof events.$inferSelect): Event {
+  return {
+    id: r.id,
+    createdAt: r.createdAt.toISOString(),
+    name: r.name,
+    slug: r.slug,
+    ownerId: r.ownerId,
+  };
+}
+
 export function ownedEventsRepo(db: Database): OwnedEventsRepo {
   return {
     async listByOwner(ownerId) {
@@ -89,13 +89,16 @@ export function ownedEventsRepo(db: Database): OwnedEventsRepo {
         .from(events)
         .where(eq(events.ownerId, ownerId))
         .orderBy(desc(events.createdAt));
-      return rows.map<Event>((r) => ({
-        id: r.id,
-        createdAt: r.createdAt.toISOString(),
-        name: r.name,
-        slug: r.slug,
-        ownerId: r.ownerId,
-      }));
+      return rows.map(rowToEvent);
+    },
+  };
+}
+
+export function allEventsRepo(db: Database): AllEventsRepo {
+  return {
+    async listAll() {
+      const rows = await db.select().from(events).orderBy(desc(events.createdAt));
+      return rows.map(rowToEvent);
     },
   };
 }

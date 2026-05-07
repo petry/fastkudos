@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { submitKudoInput } from '@fastkudos/shared';
-import { requireAuth, getUser, type AuthContext } from '../auth/middleware';
+import { requireAuth, requireAnon, getAnonUser, type AuthContext } from '../auth/middleware';
 import { getDb } from '../db/factory';
 import {
   AuthorizationError,
@@ -12,10 +12,10 @@ import { durableObjectPublisher } from '../realtime/publisher';
 
 export const kudoRoutes = new Hono<AuthContext>();
 
-kudoRoutes.use('*', requireAuth());
+kudoRoutes.use('*', requireAuth(), requireAnon());
 
 kudoRoutes.post('/', async (c) => {
-  const user = getUser(c);
+  const user = getAnonUser(c);
   const body = await c.req.json().catch(() => null);
   const parsed = submitKudoInput.safeParse(body);
   if (!parsed.success) {

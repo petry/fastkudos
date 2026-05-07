@@ -12,6 +12,7 @@ tag = "v1"
 new_sqlite_classes = ["EventChannel"]
 
 [vars]
-# DATABASE_URL e JWT_SECRET devem ser definidos como secrets em produção:
-#   wrangler secret put DATABASE_URL
-#   wrangler secret put JWT_SECRET
+# Defina como secrets em produção via `wrangler secret put`:
+#   DATABASE_URL, JWT_SECRET,
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+#   OAUTH_REDIRECT_URI, WEB_BASE_URL.

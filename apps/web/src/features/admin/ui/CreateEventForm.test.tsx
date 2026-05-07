@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CreateEventForm } from './CreateEventForm';
-import type { AdminEventsGateway } from '../domain/ports';
+import type { OwnedEventsGateway } from '../domain/ports';
 
-function setup(impl?: AdminEventsGateway['create']) {
-  const gateway: AdminEventsGateway = {
+function setup(impl?: OwnedEventsGateway['create']) {
+  const gateway: OwnedEventsGateway = {
     create: impl ?? vi.fn(async ({ name, slug }) => ({ id: 'e1', name, slug })),
     list: vi.fn(async () => []),
     update: vi.fn(),

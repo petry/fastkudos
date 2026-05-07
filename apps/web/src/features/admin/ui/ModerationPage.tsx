@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import type { Feedback, Profile } from '@fastkudos/shared';
-import type { AdminEventsGateway, AdminSessionStore } from '../domain/ports';
+import type { LoggedSessionStore, OwnedEventsGateway } from '../domain/ports';
 
 export interface ModerationPageProps {
-  session: AdminSessionStore;
-  gateway: AdminEventsGateway;
+  session: LoggedSessionStore;
+  gateway: OwnedEventsGateway;
 }
 
 export function ModerationPage({ session, gateway }: ModerationPageProps) {
@@ -14,11 +14,11 @@ export function ModerationPage({ session, gateway }: ModerationPageProps) {
   const [current] = useState(() => session.load());
   const { id = '' } = useParams();
 
-  if (!current) return <Navigate to="/admin/login" replace />;
+  if (!current) return <Navigate to="/login" replace />;
 
   return (
     <main className="mx-auto max-w-md p-6">
-      <Link to="/admin" className="text-sm text-slate-600 underline">
+      <Link to="/dashboard" className="text-sm text-slate-600 underline">
         ← Voltar
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">Moderação</h1>
@@ -43,7 +43,7 @@ function FeedbacksSection({
 }: {
   token: string;
   eventId: string;
-  gateway: AdminEventsGateway;
+  gateway: OwnedEventsGateway;
 }) {
   const [items, setItems] = useState<Feedback[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +111,7 @@ function ProfilesSection({
 }: {
   token: string;
   eventId: string;
-  gateway: AdminEventsGateway;
+  gateway: OwnedEventsGateway;
 }) {
   const [items, setItems] = useState<Profile[] | null>(null);
   const [error, setError] = useState<string | null>(null);

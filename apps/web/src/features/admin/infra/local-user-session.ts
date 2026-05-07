@@ -1,6 +1,6 @@
-import type { AdminSession, AdminSessionStore } from '../domain/ports';
+import type { LoggedSession, LoggedSessionStore } from '../domain/ports';
 
-const KEY = 'fastkudos:admin-session';
+const KEY = 'fastkudos:user-session';
 
 function safeStorage(): Storage {
   try {
@@ -26,14 +26,14 @@ function safeStorage(): Storage {
   };
 }
 
-export function localAdminSessionStore(storage: Storage = safeStorage()): AdminSessionStore {
+export function localUserSessionStore(storage: Storage = safeStorage()): LoggedSessionStore {
   return {
     save: (s) => storage.setItem(KEY, JSON.stringify(s)),
     load: () => {
       const raw = storage.getItem(KEY);
       if (!raw) return null;
       try {
-        return JSON.parse(raw) as AdminSession;
+        return JSON.parse(raw) as LoggedSession;
       } catch {
         storage.removeItem(KEY);
         return null;

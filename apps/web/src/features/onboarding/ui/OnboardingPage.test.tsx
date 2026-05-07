@@ -1,33 +1,79 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { Profile } from '@fastkudos/shared';
 import { OnboardingPage } from './OnboardingPage';
 import type { AuthGateway, SessionStore } from '../domain/ports';
+import type { LoggedSession, LoggedSessionStore } from '../../admin/domain/ports';
 
-function setup(overrides?: { cached?: { token: string; profile: Profile } | null }) {
+interface SetupOptions {
+  cached?: { token: string; profile: Profile } | null;
+  loggedUser?: LoggedSession | null;
+  authOverrides?: Partial<AuthGateway>;
+}
+
+function setup(opts: SetupOptions = {}) {
   const session: SessionStore = {
     save: vi.fn(),
-    load: vi.fn(() => overrides?.cached ?? null),
+    load: vi.fn(() => opts.cached ?? null),
   };
   const auth: AuthGateway = {
     registerAnon: vi.fn(async ({ displayName }) => ({
       token: 'tok',
       profile: { id: 'p1', displayName, eventId: 'e1', isAdmin: false },
     })),
+    eventJoin: vi.fn(async () => ({
+      token: 'tok-user',
+      profile: { id: 'p-user', displayName: 'Logado', eventId: 'e1', isAdmin: false },
+    })),
+    ...opts.authOverrides,
+  };
+  const userSession: LoggedSessionStore = {
+    save: vi.fn(),
+    load: vi.fn(() => opts.loggedUser ?? null),
+    clear: vi.fn(),
   };
   render(
     <MemoryRouter initialEntries={['/e/demo']}>
       <Routes>
-        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
+        <Route
+          path="/e/:slug"
+          element={
+            <OnboardingPage
+              auth={auth}
+              session={session}
+              userSession={userSession}
+              participants={{
+                list: async () => ({
+                  event: { id: 'e1', name: 'Demo', slug: 'demo' },
+                  profiles: [],
+                }),
+              }}
+              kudos={{ submit: vi.fn() }}
+              stream={{ subscribe: () => () => {} }}
+              mural={{ list: async () => [] }}
+            />
+          }
+        />
       </Routes>
     </MemoryRouter>,
   );
-  return { auth, session };
+  return { auth, session, userSession };
 }
 
-describe('<OnboardingPage>', () => {
+const loggedAlice: LoggedSession = {
+  token: 'jwt-user-token',
+  user: {
+    id: 'u1',
+    email: 'alice@example.com',
+    name: 'Alice Login',
+    avatarUrl: null,
+    role: 'user',
+  },
+};
+
+describe('<OnboardingPage> anônimo', () => {
   it('envia o nome e mostra mensagem de boas-vindas', async () => {
     const user = userEvent.setup();
     const { auth, session } = setup();
@@ -72,21 +118,57 @@ describe('<OnboardingPage>', () => {
 
   it('exibe erro quando o gateway falha', async () => {
     const user = userEvent.setup();
-    const session: SessionStore = { save: vi.fn(), load: vi.fn(() => null) };
-    const auth: AuthGateway = {
-      registerAnon: vi.fn(async () => {
-        throw new Error('event_not_found');
-      }),
-    };
-    render(
-      <MemoryRouter initialEntries={['/e/demo']}>
-        <Routes>
-          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => ({ event: { id: 'e1', name: 'Demo', slug: 'demo' }, profiles: [] }) }} kudos={{ submit: vi.fn() }} stream={{ subscribe: () => () => {} }} mural={{ list: async () => [] }} />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+    const { auth } = setup({
+      authOverrides: {
+        registerAnon: vi.fn(async () => {
+          throw new Error('event_not_found');
+        }),
+      },
+    });
     await user.type(screen.getByLabelText('Seu nome'), 'Alice');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/event_not_found/);
+    expect(auth.registerAnon).toHaveBeenCalled();
+  });
+});
+
+describe('<OnboardingPage> user logado', () => {
+  it('faz auto-join silencioso sem renderizar o input de nome', async () => {
+    const { auth } = setup({ loggedUser: loggedAlice });
+    expect(screen.queryByLabelText('Seu nome')).not.toBeInTheDocument();
+    expect(screen.getByText(/entrando como alice login/i)).toBeInTheDocument();
+    await waitFor(() => expect(auth.eventJoin).toHaveBeenCalledWith({
+      slug: 'demo',
+      userToken: 'jwt-user-token',
+    }));
+    expect(await screen.findByTestId('welcome')).toHaveTextContent('Olá, Logado!');
+  });
+
+  it('mostra erro com link de volta quando o auto-join falha', async () => {
+    setup({
+      loggedUser: loggedAlice,
+      authOverrides: {
+        eventJoin: vi.fn(async () => {
+          throw new Error('event_not_found');
+        }),
+      },
+    });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/event_not_found/);
+    expect(screen.getByRole('link', { name: /voltar para o dashboard/i })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    );
+    expect(screen.queryByLabelText('Seu nome')).not.toBeInTheDocument();
+  });
+
+  it('quando há sessão anônima em cache, ignora a sessão de user e mostra a UI joined', () => {
+    setup({
+      loggedUser: loggedAlice,
+      cached: {
+        token: 't-anon',
+        profile: { id: 'p-anon', displayName: 'Anônimo', eventId: 'e1', isAdmin: false },
+      },
+    });
+    expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Anônimo!');
   });
 });

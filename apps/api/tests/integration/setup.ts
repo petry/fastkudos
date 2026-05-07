@@ -35,7 +35,7 @@ export async function startIntegration(): Promise<IntegrationCtx> {
     pool,
     db,
     async reset() {
-      await pool.query('TRUNCATE feedbacks, profiles, events, admin_users RESTART IDENTITY CASCADE');
+      await pool.query('TRUNCATE feedbacks, profiles, events, users RESTART IDENTITY CASCADE');
     },
     async stop() {
       await pool.end();

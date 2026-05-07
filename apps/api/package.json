@@ -12,12 +12,13 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:migrate": "tsx --env-file-if-exists=.dev.vars scripts/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=.dev.vars scripts/seed.ts"
   },
   "dependencies": {
     "@fastkudos/shared": "workspace:*",
     "@neondatabase/serverless": "^0.10.1",
+    "arctic": "^3.7.0",
     "drizzle-orm": "^0.36.0",
     "hono": "^4.6.9",
     "zod": "^3.23.8"

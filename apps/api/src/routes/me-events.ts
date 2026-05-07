@@ -1,6 +1,6 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { createEventInput, updateEventInput } from '@fastkudos/shared';
-import { requireAuth, requireAdmin, getUser, type AuthContext } from '../auth/middleware';
+import { requireAuth, requireUser, getLoggedUser, type AuthContext } from '../auth/middleware';
 import { getDb } from '../db/factory';
 import { SlugTakenError, createEvent } from '../features/admin/application/create-event';
 import {
@@ -36,25 +36,49 @@ import {
   NotFoundError as DeleteNotFound,
   deleteEventAsAdmin,
 } from '../features/admin/application/delete-event';
+import type { Actor } from '../features/admin/domain/actor';
 
-export const adminRoutes = new Hono<AuthContext>();
+export const meEventsRoutes = new Hono<AuthContext>();
 
-adminRoutes.use('*', requireAuth(), requireAdmin());
+meEventsRoutes.use('*', requireAuth(), requireUser());
 
-adminRoutes.get('/events', async (c) => {
-  const user = getUser(c);
+function actorFor(c: Context<AuthContext>): Actor {
+  const u = getLoggedUser(c);
+  return { id: u.userId, role: u.role };
+}
+
+meEventsRoutes.get('/events', async (c) => {
+  const u = getLoggedUser(c);
   const db = getDb(c.env);
-  const events = await listOwnedEvents({ events: ownedEventsRepo(db) }, { ownerId: user.profileId });
+  const events = await listOwnedEvents({ events: ownedEventsRepo(db) }, { ownerId: u.userId });
   return c.json({ events });
 });
 
-adminRoutes.get('/events/:id/feedbacks', async (c) => {
-  const user = getUser(c);
+meEventsRoutes.post('/events', async (c) => {
+  const u = getLoggedUser(c);
+  const body = await c.req.json().catch(() => null);
+  const parsed = createEventInput.safeParse(body);
+  if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
+
+  const db = getDb(c.env);
+  try {
+    const event = await createEvent(
+      { events: eventRepo(db) },
+      { name: parsed.data.name, slug: parsed.data.slug, ownerId: u.userId },
+    );
+    return c.json({ event }, 201);
+  } catch (e) {
+    if (e instanceof SlugTakenError) return c.json({ error: 'slug_taken' }, 409);
+    throw e;
+  }
+});
+
+meEventsRoutes.get('/events/:id/feedbacks', async (c) => {
   const db = getDb(c.env);
   try {
     const feedbacks = await listEventFeedbacks(
       { events: ownedEventLookup(db), feedbacks: eventFeedbacksRepo(db) },
-      { eventId: c.req.param('id'), adminId: user.profileId },
+      { eventId: c.req.param('id'), actor: actorFor(c) },
     );
     return c.json({ feedbacks });
   } catch (e) {
@@ -64,13 +88,12 @@ adminRoutes.get('/events/:id/feedbacks', async (c) => {
   }
 });
 
-adminRoutes.get('/events/:id/profiles', async (c) => {
-  const user = getUser(c);
+meEventsRoutes.get('/events/:id/profiles', async (c) => {
   const db = getDb(c.env);
   try {
     const profiles = await listEventProfiles(
       { events: ownedEventLookup(db), profiles: eventProfilesRepo(db) },
-      { eventId: c.req.param('id'), adminId: user.profileId },
+      { eventId: c.req.param('id'), actor: actorFor(c) },
     );
     return c.json({ profiles });
   } catch (e) {
@@ -80,27 +103,7 @@ adminRoutes.get('/events/:id/profiles', async (c) => {
   }
 });
 
-adminRoutes.post('/events', async (c) => {
-  const user = getUser(c);
-  const body = await c.req.json().catch(() => null);
-  const parsed = createEventInput.safeParse(body);
-  if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
-
-  const db = getDb(c.env);
-  try {
-    const event = await createEvent(
-      { events: eventRepo(db) },
-      { name: parsed.data.name, slug: parsed.data.slug, ownerId: user.profileId },
-    );
-    return c.json({ event }, 201);
-  } catch (e) {
-    if (e instanceof SlugTakenError) return c.json({ error: 'slug_taken' }, 409);
-    throw e;
-  }
-});
-
-adminRoutes.patch('/events/:id', async (c) => {
-  const user = getUser(c);
+meEventsRoutes.patch('/events/:id', async (c) => {
   const body = await c.req.json().catch(() => null);
   const parsed = updateEventInput.safeParse(body);
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
@@ -109,7 +112,7 @@ adminRoutes.patch('/events/:id', async (c) => {
   try {
     const event = await updateEvent(
       { events: ownedEventLookup(db), repo: eventRepo(db) },
-      { eventId: c.req.param('id'), adminId: user.profileId, patch: parsed.data },
+      { eventId: c.req.param('id'), actor: actorFor(c), patch: parsed.data },
     );
     return c.json({ event });
   } catch (e) {
@@ -120,13 +123,12 @@ adminRoutes.patch('/events/:id', async (c) => {
   }
 });
 
-adminRoutes.delete('/events/:id', async (c) => {
-  const user = getUser(c);
+meEventsRoutes.delete('/events/:id', async (c) => {
   const db = getDb(c.env);
   try {
     await deleteEventAsAdmin(
       { events: ownedEventLookup(db), repo: eventRepo(db) },
-      { eventId: c.req.param('id'), adminId: user.profileId },
+      { eventId: c.req.param('id'), actor: actorFor(c) },
     );
     return c.body(null, 204);
   } catch (e) {
@@ -136,13 +138,12 @@ adminRoutes.delete('/events/:id', async (c) => {
   }
 });
 
-adminRoutes.delete('/feedbacks/:id', async (c) => {
-  const user = getUser(c);
+meEventsRoutes.delete('/feedbacks/:id', async (c) => {
   const db = getDb(c.env);
   try {
     await deleteFeedbackAsAdmin(
       { feedbacks: feedbackOwnership(db) },
-      { feedbackId: c.req.param('id'), adminId: user.profileId },
+      { feedbackId: c.req.param('id'), actor: actorFor(c) },
     );
     return c.body(null, 204);
   } catch (e) {
@@ -152,13 +153,12 @@ adminRoutes.delete('/feedbacks/:id', async (c) => {
   }
 });
 
-adminRoutes.delete('/profiles/:id', async (c) => {
-  const user = getUser(c);
+meEventsRoutes.delete('/profiles/:id', async (c) => {
   const db = getDb(c.env);
   try {
     await deleteProfileAsAdmin(
       { profiles: profileOwnership(db) },
-      { profileId: c.req.param('id'), adminId: user.profileId },
+      { profileId: c.req.param('id'), actor: actorFor(c) },
     );
     return c.body(null, 204);
   } catch (e) {

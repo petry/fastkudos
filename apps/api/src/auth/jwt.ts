@@ -1,11 +1,15 @@
 // JWT HS256 mínimo, sem dependências, compatível com Workers (WebCrypto).
-// Claims usados: sub, event_id, display_name, is_admin, exp, iat.
+// Claims usados: sub, kind ('anon'|'user'), role (quando user), event_id, display_name, exp, iat.
+
+export type JwtKind = 'anon' | 'user';
+export type UserRole = 'user' | 'superadmin';
 
 export interface JwtClaims {
   sub: string;
+  kind: JwtKind;
+  role?: UserRole;
   event_id: string;
   display_name: string;
-  is_admin: boolean;
   exp: number;
   iat: number;
 }

@@ -13,7 +13,7 @@ describe('POST /kudos (borda)', () => {
 
   it('retorna 400 com body inválido', async () => {
     const token = await signJwt(
-      { sub: 'p1', event_id: 'e1', display_name: 'A', is_admin: false },
+      { sub: 'p1', kind: 'anon', event_id: 'e1', display_name: 'A' },
       SECRET,
       60,
     );
