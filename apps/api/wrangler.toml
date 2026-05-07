@@ -1,0 +1,17 @@
+name = "fastkudos-api"
+main = "src/index.ts"
+compatibility_date = "2024-11-06"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "EVENT_CHANNEL"
+class_name = "EventChannel"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["EventChannel"]
+
+[vars]
+# DATABASE_URL e JWT_SECRET devem ser definidos como secrets em produção:
+#   wrangler secret put DATABASE_URL
+#   wrangler secret put JWT_SECRET

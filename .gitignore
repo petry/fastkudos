@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.cache/
+.turbo/
+coverage/
+.wrangler/
+.dev.vars
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+playwright-report/
+test-results/
+.vite/
