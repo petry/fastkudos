@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import type { AdminEventsGateway, AdminSessionStore } from '../domain/ports';
 import { CreateEventForm } from './CreateEventForm';
+import { EventsList } from './EventsList';
 
 export interface AdminDashboardPageProps {
   session: AdminSessionStore;
@@ -9,6 +11,8 @@ export interface AdminDashboardPageProps {
 
 export function AdminDashboardPage({ session, events }: AdminDashboardPageProps) {
   const current = session.load();
+  const [listKey, setListKey] = useState(0);
+
   if (!current) return <Navigate to="/admin/login" replace />;
 
   return (
@@ -31,7 +35,18 @@ export function AdminDashboardPage({ session, events }: AdminDashboardPageProps)
       <section className="mt-6">
         <h2 className="text-lg font-semibold">Criar evento</h2>
         <div className="mt-2">
-          <CreateEventForm token={current.token} gateway={events} />
+          <CreateEventForm
+            token={current.token}
+            gateway={events}
+            onCreated={() => setListKey((k) => k + 1)}
+          />
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold">Meus eventos</h2>
+        <div className="mt-2">
+          <EventsList key={listKey} token={current.token} gateway={events} />
         </div>
       </section>
     </main>

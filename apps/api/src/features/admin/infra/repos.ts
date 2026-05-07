@@ -36,6 +36,14 @@ export function eventRepo(db: Database): EventRepo {
       const row = inserted[0]!;
       return { id: row.id, slug: row.slug, name: row.name };
     },
+    async update(id, patch) {
+      const updated = await db.update(events).set(patch).where(eq(events.id, id)).returning();
+      const row = updated[0]!;
+      return { id: row.id, slug: row.slug, name: row.name };
+    },
+    async delete(id) {
+      await db.delete(events).where(eq(events.id, id));
+    },
   };
 }
 

@@ -8,6 +8,8 @@ function setup(impl?: AdminEventsGateway['create']) {
   const gateway: AdminEventsGateway = {
     create: impl ?? vi.fn(async ({ name, slug }) => ({ id: 'e1', name, slug })),
     list: vi.fn(async () => []),
+    update: vi.fn(),
+    delete: vi.fn(),
     feedbacks: vi.fn(async () => []),
     deleteFeedback: vi.fn(),
     profiles: vi.fn(async () => []),

@@ -89,6 +89,76 @@ describe('GET /admin/events/:id/feedbacks (borda)', () => {
   });
 });
 
+describe('PATCH /admin/events/:id (borda)', () => {
+  it('retorna 401 sem token', async () => {
+    const res = await app.request(
+      'http://local/admin/events/abc',
+      { method: 'PATCH' },
+      env,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('retorna 403 para não-admin', async () => {
+    const res = await app.request(
+      'http://local/admin/events/abc',
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${await anonToken()}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'X' }),
+      },
+      env,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('retorna 400 com input inválido (admin)', async () => {
+    const res = await app.request(
+      'http://local/admin/events/abc',
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${await adminToken()}`, 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      },
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('retorna 400 com slug inválido', async () => {
+    const res = await app.request(
+      'http://local/admin/events/abc',
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${await adminToken()}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'NÃO VAI' }),
+      },
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('DELETE /admin/events/:id (borda)', () => {
+  it('retorna 401 sem token', async () => {
+    const res = await app.request(
+      'http://local/admin/events/abc',
+      { method: 'DELETE' },
+      env,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('retorna 403 para não-admin', async () => {
+    const res = await app.request(
+      'http://local/admin/events/abc',
+      { method: 'DELETE', headers: { authorization: `Bearer ${await anonToken()}` } },
+      env,
+    );
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('GET /admin/events/:id/profiles (borda)', () => {
   it('retorna 403 para não-admin', async () => {
     const res = await app.request(

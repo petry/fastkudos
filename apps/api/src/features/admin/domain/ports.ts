@@ -11,6 +11,11 @@ export interface AdminUserRepo {
 export interface EventRepo {
   existsBySlug(slug: string): Promise<boolean>;
   create(input: { name: string; slug: string; ownerId: string }): Promise<{ id: string; slug: string; name: string }>;
+  update(
+    id: string,
+    patch: { name?: string; slug?: string },
+  ): Promise<{ id: string; slug: string; name: string }>;
+  delete(id: string): Promise<void>;
 }
 
 export interface FeedbackOwnership {

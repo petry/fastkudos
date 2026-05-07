@@ -19,5 +19,15 @@ export const createEventInput = z.object({
   slug: slugSchema,
 });
 
+export const updateEventInput = z
+  .object({
+    name: z.string().min(1).max(120).optional(),
+    slug: slugSchema.optional(),
+  })
+  .refine((v) => v.name !== undefined || v.slug !== undefined, {
+    message: 'pelo menos um campo deve ser fornecido',
+  });
+
 export type Event = z.infer<typeof eventSchema>;
 export type CreateEventInput = z.infer<typeof createEventInput>;
+export type UpdateEventInput = z.infer<typeof updateEventInput>;

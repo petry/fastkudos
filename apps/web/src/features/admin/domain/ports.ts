@@ -12,6 +12,12 @@ import type { Event, Feedback, Profile } from '@fastkudos/shared';
 export interface AdminEventsGateway {
   create(input: { token: string; name: string; slug: string }): Promise<{ id: string; slug: string; name: string }>;
   list(input: { token: string }): Promise<Event[]>;
+  update(input: {
+    token: string;
+    eventId: string;
+    patch: { name?: string; slug?: string };
+  }): Promise<{ id: string; slug: string; name: string }>;
+  delete(input: { token: string; eventId: string }): Promise<void>;
   feedbacks(input: { token: string; eventId: string }): Promise<Feedback[]>;
   deleteFeedback(input: { token: string; feedbackId: string }): Promise<void>;
   profiles(input: { token: string; eventId: string }): Promise<Profile[]>;

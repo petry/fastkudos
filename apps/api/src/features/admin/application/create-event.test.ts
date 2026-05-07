@@ -6,6 +6,8 @@ function repo(taken: Set<string>): EventRepo {
   return {
     existsBySlug: async (s) => taken.has(s),
     create: vi.fn(async (input) => ({ id: 'e1', ...input })),
+    update: vi.fn(),
+    delete: vi.fn(),
   };
 }
 

@@ -26,6 +26,8 @@ function setup(opts?: { feedbacks?: Feedback[]; profiles?: Profile[] }) {
   const gateway: AdminEventsGateway = {
     create: vi.fn(),
     list: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
     feedbacks: vi.fn(async () => opts?.feedbacks ?? []),
     deleteFeedback: vi.fn(async () => {}),
     profiles: vi.fn(async () => opts?.profiles ?? []),

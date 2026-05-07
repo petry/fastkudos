@@ -40,6 +40,29 @@ export function httpAdminEventsGateway(baseUrl: string, fetchImpl: typeof fetch 
       if (!res.ok) throw new Error(`list_failed_${res.status}`);
       return ((await res.json()) as { events: Event[] }).events;
     },
+    async update({ token, eventId, patch }) {
+      const res = await fetchImpl(`${baseUrl}/admin/events/${encodeURIComponent(eventId)}`, {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `update_failed_${res.status}`);
+      }
+      const data = (await res.json()) as { event: { id: string; slug: string; name: string } };
+      return data.event;
+    },
+    async delete({ token, eventId }) {
+      const res = await fetchImpl(`${baseUrl}/admin/events/${encodeURIComponent(eventId)}`, {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `delete_event_failed_${res.status}`);
+      }
+    },
     async feedbacks({ token, eventId }) {
       const res = await fetchImpl(`${baseUrl}/admin/events/${encodeURIComponent(eventId)}/feedbacks`, {
         headers: { authorization: `Bearer ${token}` },

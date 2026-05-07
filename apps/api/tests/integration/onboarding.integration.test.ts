@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { hashPassword } from '../../src/auth/password';
 import { signJwt } from '../../src/auth/jwt';
 import app from '../../src/index';
@@ -297,5 +298,124 @@ describe('integração: admin', () => {
 
     const remaining = await ctx.db.select().from(feedbacks);
     expect(remaining).toHaveLength(0);
+  });
+
+  it('PATCH /admin/events/:id atualiza nome/slug do dono e nega para outro admin', async () => {
+    // admin 1 dono do evento
+    const [adm1] = await ctx.db
+      .insert(adminUsers)
+      .values({ email: 'a1@x.com', passwordHash: await hashPassword('s3nh@-segura') })
+      .returning();
+    const [ev] = await ctx.db
+      .insert(events)
+      .values({ name: 'Antigo', slug: 'antigo', ownerId: adm1!.id })
+      .returning();
+    const adm1Token = await signJwt(
+      { sub: adm1!.id, event_id: '', display_name: 'a1@x.com', is_admin: true },
+      SECRET,
+      60,
+    );
+
+    const ok = await app.request(
+      `http://local/admin/events/${ev!.id}`,
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${adm1Token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'Novo', slug: 'novo' }),
+      },
+      envFor(),
+    );
+    expect(ok.status).toBe(200);
+    const body = (await ok.json()) as { event: { name: string; slug: string } };
+    expect(body.event).toMatchObject({ name: 'Novo', slug: 'novo' });
+
+    // admin 2 não dono → 403 ao editar
+    const [adm2] = await ctx.db
+      .insert(adminUsers)
+      .values({ email: 'a2@x.com', passwordHash: await hashPassword('outra-senha') })
+      .returning();
+    const adm2Token = await signJwt(
+      { sub: adm2!.id, event_id: '', display_name: 'a2@x.com', is_admin: true },
+      SECRET,
+      60,
+    );
+    const forbidden = await app.request(
+      `http://local/admin/events/${ev!.id}`,
+      {
+        method: 'PATCH',
+        headers: { authorization: `Bearer ${adm2Token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'Hack' }),
+      },
+      envFor(),
+    );
+    expect(forbidden.status).toBe(403);
+  });
+
+  it('DELETE /admin/events/:id apaga em cascata profiles e feedbacks; nega para outro admin', async () => {
+    const { feedbacks } = await import('../../drizzle/schema');
+
+    const [adm1] = await ctx.db
+      .insert(adminUsers)
+      .values({ email: 'owner@x.com', passwordHash: await hashPassword('s3nh@-segura') })
+      .returning();
+    const [ev] = await ctx.db
+      .insert(events)
+      .values({ name: 'Demo', slug: 'demo-del', ownerId: adm1!.id })
+      .returning();
+    const [p1] = await ctx.db
+      .insert(profiles)
+      .values({ displayName: 'A', eventId: ev!.id })
+      .returning();
+    const [p2] = await ctx.db
+      .insert(profiles)
+      .values({ displayName: 'B', eventId: ev!.id })
+      .returning();
+    await ctx.db
+      .insert(feedbacks)
+      .values({ senderId: p1!.id, receiverId: p2!.id, eventId: ev!.id, content: 'top' });
+
+    const adm1Token = await signJwt(
+      { sub: adm1!.id, event_id: '', display_name: 'owner@x.com', is_admin: true },
+      SECRET,
+      60,
+    );
+
+    // outro admin → 403
+    const [adm2] = await ctx.db
+      .insert(adminUsers)
+      .values({ email: 'outro@x.com', passwordHash: await hashPassword('outra-senha') })
+      .returning();
+    const adm2Token = await signJwt(
+      { sub: adm2!.id, event_id: '', display_name: 'outro@x.com', is_admin: true },
+      SECRET,
+      60,
+    );
+    const forbidden = await app.request(
+      `http://local/admin/events/${ev!.id}`,
+      { method: 'DELETE', headers: { authorization: `Bearer ${adm2Token}` } },
+      envFor(),
+    );
+    expect(forbidden.status).toBe(403);
+
+    // dono apaga → 204 + cascata limpa profiles e feedbacks
+    const ok = await app.request(
+      `http://local/admin/events/${ev!.id}`,
+      { method: 'DELETE', headers: { authorization: `Bearer ${adm1Token}` } },
+      envFor(),
+    );
+    expect(ok.status).toBe(204);
+
+    const remainingEvents = await ctx.db.select().from(events).where(eq(events.id, ev!.id));
+    expect(remainingEvents).toHaveLength(0);
+    const remainingProfiles = await ctx.db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.eventId, ev!.id));
+    expect(remainingProfiles).toHaveLength(0);
+    const remainingFeedbacks = await ctx.db
+      .select()
+      .from(feedbacks)
+      .where(eq(feedbacks.eventId, ev!.id));
+    expect(remainingFeedbacks).toHaveLength(0);
   });
 });

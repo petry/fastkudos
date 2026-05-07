@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createEventInput } from '@fastkudos/shared';
+import { createEventInput, updateEventInput } from '@fastkudos/shared';
 import { requireAuth, requireAdmin, getUser, type AuthContext } from '../auth/middleware';
 import { getDb } from '../db/factory';
 import { SlugTakenError, createEvent } from '../features/admin/application/create-event';
@@ -25,6 +25,17 @@ import {
   listEventFeedbacks,
 } from '../features/admin/application/list-event-feedbacks';
 import { listEventProfiles } from '../features/admin/application/list-event-profiles';
+import {
+  ForbiddenError as UpdateForbidden,
+  NotFoundError as UpdateNotFound,
+  SlugTakenError as UpdateSlugTaken,
+  updateEvent,
+} from '../features/admin/application/update-event';
+import {
+  ForbiddenError as DeleteForbidden,
+  NotFoundError as DeleteNotFound,
+  deleteEventAsAdmin,
+} from '../features/admin/application/delete-event';
 
 export const adminRoutes = new Hono<AuthContext>();
 
@@ -84,6 +95,43 @@ adminRoutes.post('/events', async (c) => {
     return c.json({ event }, 201);
   } catch (e) {
     if (e instanceof SlugTakenError) return c.json({ error: 'slug_taken' }, 409);
+    throw e;
+  }
+});
+
+adminRoutes.patch('/events/:id', async (c) => {
+  const user = getUser(c);
+  const body = await c.req.json().catch(() => null);
+  const parsed = updateEventInput.safeParse(body);
+  if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
+
+  const db = getDb(c.env);
+  try {
+    const event = await updateEvent(
+      { events: ownedEventLookup(db), repo: eventRepo(db) },
+      { eventId: c.req.param('id'), adminId: user.profileId, patch: parsed.data },
+    );
+    return c.json({ event });
+  } catch (e) {
+    if (e instanceof UpdateNotFound) return c.json({ error: 'not_found' }, 404);
+    if (e instanceof UpdateForbidden) return c.json({ error: 'forbidden' }, 403);
+    if (e instanceof UpdateSlugTaken) return c.json({ error: 'slug_taken' }, 409);
+    throw e;
+  }
+});
+
+adminRoutes.delete('/events/:id', async (c) => {
+  const user = getUser(c);
+  const db = getDb(c.env);
+  try {
+    await deleteEventAsAdmin(
+      { events: ownedEventLookup(db), repo: eventRepo(db) },
+      { eventId: c.req.param('id'), adminId: user.profileId },
+    );
+    return c.body(null, 204);
+  } catch (e) {
+    if (e instanceof DeleteNotFound) return c.json({ error: 'not_found' }, 404);
+    if (e instanceof DeleteForbidden) return c.json({ error: 'forbidden' }, 403);
     throw e;
   }
 });
