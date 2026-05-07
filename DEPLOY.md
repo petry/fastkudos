@@ -4,21 +4,42 @@ Stack de produção:
 - **Banco**: Neon (Postgres serverless)
 - **API**: Cloudflare Workers (Hono + Durable Objects)
 - **Web**: Cloudflare Pages (build estático do Vite)
+- **Auth**: Google OAuth 2.0 (futuro: GitHub, LinkedIn)
+
+> **Pré-requisitos**: você precisa de um `<API_HOST>` (URL do Worker) e um
+> `<WEB_HOST>` (URL do Pages) **decididos antes** de configurar OAuth e CORS,
+> porque eles entram nos secrets e nas URIs cadastradas no Google. Em primeira
+> ronda use as URLs padrão (`fastkudos-api.<conta>.workers.dev` e
+> `fastkudos-web.pages.dev`); custom domains ficam pra depois.
 
 ## 1. Provisionar Neon
 
-1. Crie um projeto em https://console.neon.tech
-2. Copie a connection string (`postgres://user:pass@host/db?sslmode=require`)
-3. Aplique as migrations localmente apontando `DATABASE_URL` para o Neon:
+1. Crie um projeto em https://console.neon.tech.
+2. Recomendado: separe **branch `main`** para produção e crie uma **branch
+   `dev`** para desenvolvimento. Ambas têm connection string própria.
+3. Copie a connection string da branch de prod
+   (`postgres://user:pass@host/db?sslmode=require`).
+4. Aplique as migrations apontando `DATABASE_URL` para o Neon de prod:
    ```bash
-   DATABASE_URL='postgres://...' pnpm -F @fastkudos/api db:migrate
+   DATABASE_URL='postgres://...prod...' pnpm -F @fastkudos/api db:migrate
    ```
-4. (Opcional, dev) seed inicial:
-   ```bash
-   DATABASE_URL='postgres://...' pnpm -F @fastkudos/api db:seed
-   ```
+   Você deve ver `applying 0000_shiny_spyke.sql` e `applying 0001_oauth_users.sql`.
 
-## 2. Deploy da API (Cloudflare Workers)
+## 2. Configurar Google OAuth (Cloud Console)
+
+Crie um **Client ID separado** para produção (não reuse o de dev).
+
+1. https://console.cloud.google.com → seu projeto.
+2. **APIs & Services → OAuth consent screen** → adicione `<WEB_HOST>` em
+   "Authorized domains" e seus emails de teste em "Test users" enquanto o
+   app estiver em modo Testing. Para escopos `openid email profile` o Google
+   permite **publicar** sem verificação manual.
+3. **Credentials → Create credentials → OAuth client ID → Web application**:
+   - **Authorized JavaScript origins**: `https://<WEB_HOST>`
+   - **Authorized redirect URIs**: `https://<API_HOST>/auth/google/callback`
+4. Anote `Client ID` e `Client secret`.
+
+## 3. Deploy da API (Cloudflare Workers)
 
 ```bash
 cd apps/api
@@ -26,28 +47,37 @@ cd apps/api
 pnpm exec wrangler login
 
 # segredos (não vão para git)
-pnpm exec wrangler secret put DATABASE_URL    # cole a string Neon
-pnpm exec wrangler secret put JWT_SECRET      # gere com: openssl rand -hex 32
+pnpm exec wrangler secret put DATABASE_URL          # connection string Neon prod
+pnpm exec wrangler secret put JWT_SECRET            # openssl rand -hex 32
+pnpm exec wrangler secret put GOOGLE_CLIENT_ID
+pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET
+pnpm exec wrangler secret put OAUTH_REDIRECT_URI    # https://<API_HOST>/auth/google/callback
+pnpm exec wrangler secret put WEB_BASE_URL          # https://<WEB_HOST>
+pnpm exec wrangler secret put ALLOWED_ORIGINS       # https://<WEB_HOST>
 
 # deploy
 pnpm deploy:worker   # equivale a `wrangler deploy`
 ```
 
-Após o deploy, anote a URL do Worker (algo como
-`https://fastkudos-api.<account>.workers.dev`). O Durable Object `EventChannel`
-já é criado automaticamente pelo `wrangler.toml` (binding `EVENT_CHANNEL`).
+Após o deploy, anote a URL real do Worker (algo como
+`https://fastkudos-api.<conta>.workers.dev`). Se não bater com o
+`<API_HOST>` que você usou nos secrets/Google, atualize as duas pontas.
+
+O Durable Object `EventChannel` é criado automaticamente pelo
+`wrangler.toml` (binding `EVENT_CHANNEL`).
 
 ### Custom domain (opcional)
 
-No painel Cloudflare → Workers & Pages → fastkudos-api → Triggers → Custom
-Domains, adicione `api.<seu-dominio>` (substitua pelo seu domínio).
+Painel Cloudflare → Workers & Pages → fastkudos-api → Settings → Triggers →
+Custom Domains, adicione `api.<seu-dominio>`. Se trocar o domínio depois,
+**reapplique** `OAUTH_REDIRECT_URI` e atualize o redirect no Google Console.
 
-## 3. Deploy do Web (Cloudflare Pages)
+## 4. Deploy do Web (Cloudflare Pages)
 
-### Primeira vez
+### Primeira vez (recomendado: integração com Git)
 
-No painel Cloudflare → Workers & Pages → Create application → Pages → Connect
-to Git, conecte o repositório com a configuração:
+Painel Cloudflare → Workers & Pages → Create application → Pages → Connect
+to Git:
 
 | Campo | Valor |
 |---|---|
@@ -55,85 +85,94 @@ to Git, conecte o repositório com a configuração:
 | Build command | `pnpm install --frozen-lockfile && pnpm -F @fastkudos/web build` |
 | Build output directory | `apps/web/dist` |
 | Root directory | (vazio) |
-| Environment variable | `VITE_API_URL=https://<api-host>` (URL do Worker) |
+| Environment variable | `VITE_API_URL=https://<API_HOST>` |
 | Node version | 20 |
 
-Cloudflare Pages instala o pnpm via corepack quando detecta `packageManager`.
-O build roda em CI Cloudflare a cada push.
+`VITE_API_URL` é lido **em build time** pelo Vite. Toda vez que o `<API_HOST>`
+mudar, force rebuild no Pages (push novo ou retry deployment).
 
-### Deploy via CLI (alternativa)
+O arquivo `public/_redirects` (`/*  /index.html  200`) garante o roteamento
+SPA do React Router em rotas como `/e/:slug`, `/dashboard/events/:id`,
+`/auth/callback` e `/superadmin`.
+
+### Deploy via CLI (alternativa one-off)
 
 ```bash
 cd apps/web
-VITE_API_URL=https://<api-host> pnpm build
-pnpm deploy:pages   # `wrangler pages deploy dist --project-name=fastkudos-web`
+VITE_API_URL=https://<API_HOST> pnpm build
+pnpm deploy:pages   # wrangler pages deploy dist --project-name=fastkudos-web
 ```
 
-O arquivo `public/_redirects` (`/*  /index.html  200`) garante o roteamento
-SPA do React Router em rotas como `/e/:slug` e `/admin/events/:id`.
+## 5. Bootstrap do primeiro superadmin
 
-## 4. CORS e domínios
+Não há rota pública de signup. O fluxo é:
 
-Em produção, defina o secret `ALLOWED_ORIGINS` com a lista de origens
-permitidas (separadas por vírgula). Quando ausente, a API libera `*`
-(somente para dev).
+1. **Inserir o user no banco** com `oauth_provider='legacy'` e
+   `oauth_sub=<qualquer string única>`. O email tem que bater com o da conta
+   Google que você vai usar para logar:
+
+   ```sql
+   INSERT INTO users (email, name, role, oauth_provider, oauth_sub)
+   VALUES ('SEU_EMAIL', 'Seu Nome', 'superadmin', 'legacy', 'bootstrap-1');
+   ```
+
+2. **Logar via Google** em `https://<WEB_HOST>/login`. O callback OAuth
+   detecta o registro `legacy` pelo email e **promove**: troca `oauth_provider`
+   para `google`, atualiza `oauth_sub` com o `sub` real do Google e preserva
+   `id` e `role='superadmin'`.
+
+3. Você cai em `/dashboard` com o link **"Painel superadmin →"** disponível.
+   Daí pode promover outros users via UI ou SQL (`UPDATE users SET role='superadmin' WHERE email='...'`).
+
+## 6. Smoke test pós-deploy
 
 ```bash
-echo 'https://app.exemplo.com,https://www.app.exemplo.com' \
-  | pnpm exec wrangler secret put ALLOWED_ORIGINS
+# health
+curl https://<API_HOST>/health
+# {"status":"ok"}
+
+# OAuth start (deve retornar 302 para accounts.google.com)
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" \
+  "https://<API_HOST>/auth/google/start"
 ```
 
-`http://localhost:5173` e `http://localhost:4173` são sempre incluídos
-para o fluxo de dev local.
+Manual:
+1. Abra `https://<WEB_HOST>/login` → "Continuar com Google" → escolhe a
+   conta seedada → cai em `/dashboard`.
+2. Crie um evento de teste, copie o slug.
+3. Abra `https://<WEB_HOST>/e/<slug>` na mesma aba → auto-join silencioso.
+4. Em janela anônima, abra `https://<WEB_HOST>/e/<slug>` → form de nome.
+   Manda um kudo de uma sessão para outra e confirma que aparece no mural
+   em tempo real (Durable Object + WebSocket).
 
-## 5. WebSocket (mural realtime)
+## 7. Realtime (WebSocket)
 
-O front conecta em `wss://<api-host>/events/:slug/stream?token=<jwt>`.
+O front conecta em `wss://<API_HOST>/events/:slug/stream?token=<jwt>`.
 Cloudflare Workers suportam WebSockets nativamente; nada extra a configurar.
 O Durable Object `EventChannel` faz fan-out por evento.
 
-## 6. Bootstrap do primeiro admin
-
-Não há rota pública de signup. Crie o admin diretamente no banco:
-
-```bash
-# gere um hash localmente (mesmo limite de iterações que o Worker usa)
-node --experimental-strip-types -e "
-import('./apps/api/src/auth/password.ts').then(async (m) => {
-  console.log(await m.hashPassword('SENHA_DESEJADA'));
-});
-"
-
-# insira no Neon (psql ou dashboard SQL):
-INSERT INTO admin_users(email, password_hash)
-VALUES ('SEU_EMAIL', 'pbkdf2$100000$...');
-```
-
-Depois faça login em `https://<dominio-front>/admin/login` e crie eventos
-pelo dashboard.
-
-## 7. Smoke test pós-deploy
-
-```bash
-# health check
-curl https://<api-host>/health
-# {"status":"ok"}
-
-# criar evento via API com token admin
-curl -X POST https://<api-host>/auth/login \
-  -H 'content-type: application/json' \
-  -d '{"email":"SEU_EMAIL","password":"SUA_SENHA"}'
-# {"token":"...","admin":{...}}
-```
-
-Abra `https://<dominio-front>/e/<slug>` em duas abas com nomes diferentes,
-envie um kudo de uma para outra e confirme que aparece no mural e como
-toast em tempo real.
-
 ## 8. Rollback
 
-- API: `wrangler rollback` ou redeploy a partir de um commit anterior
-- Web: Cloudflare Pages mantém todos os deploys; promova um anterior pelo
-  painel
-- Banco: Neon tem branching; antes de migration arriscada, crie uma branch
-  para validar
+- **API**: `pnpm exec wrangler rollback` ou redeploy a partir de um commit
+  anterior. Cloudflare guarda histórico no painel.
+- **Web**: Pages mantém todos os deploys; promova um anterior pelo painel
+  (Production → Promote).
+- **Banco**: Neon suporta point-in-time restore na branch e tem branching.
+  Antes de migration arriscada, crie uma branch a partir da prod, aplique a
+  migration nela, valide, e só então mescle.
+
+## 9. Variáveis e secrets — referência rápida
+
+| Onde | Nome | Origem |
+|---|---|---|
+| Worker (secret) | `DATABASE_URL` | Neon prod |
+| Worker (secret) | `JWT_SECRET` | `openssl rand -hex 32` |
+| Worker (secret) | `GOOGLE_CLIENT_ID` | Google Cloud Console |
+| Worker (secret) | `GOOGLE_CLIENT_SECRET` | Google Cloud Console |
+| Worker (secret) | `OAUTH_REDIRECT_URI` | `https://<API_HOST>/auth/google/callback` |
+| Worker (secret) | `WEB_BASE_URL` | `https://<WEB_HOST>` |
+| Worker (secret) | `ALLOWED_ORIGINS` | `https://<WEB_HOST>` (csv se múltiplos) |
+| Pages (env) | `VITE_API_URL` | `https://<API_HOST>` (build time) |
+
+`http://localhost:5173` e `http://localhost:4173` são sempre incluídos no
+CORS para dev local mesmo que `ALLOWED_ORIGINS` esteja setado.
