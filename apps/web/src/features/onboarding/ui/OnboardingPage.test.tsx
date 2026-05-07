@@ -20,7 +20,7 @@ function setup(overrides?: { cached?: { token: string; profile: Profile } | null
   render(
     <MemoryRouter initialEntries={['/e/demo']}>
       <Routes>
-        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => [] }} />} />
+        <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => [] }} kudos={{ submit: vi.fn() }} />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -56,7 +56,7 @@ describe('<OnboardingPage>', () => {
     render(
       <MemoryRouter initialEntries={['/e/demo']}>
         <Routes>
-          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => [] }} />} />
+          <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={{ list: async () => [] }} kudos={{ submit: vi.fn() }} />} />
         </Routes>
       </MemoryRouter>,
     );

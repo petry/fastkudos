@@ -13,7 +13,13 @@ const list: Profile[] = [
 
 function renderWith(gateway: ParticipantsGateway) {
   return render(
-    <ParticipantsList slug="demo" token="tok" currentProfileId="me" gateway={gateway} />,
+    <ParticipantsList
+      slug="demo"
+      token="tok"
+      currentProfileId="me"
+      gateway={gateway}
+      kudos={{ submit: vi.fn() }}
+    />,
   );
 }
 

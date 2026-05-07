@@ -3,17 +3,19 @@ import { OnboardingPage } from './features/onboarding/ui/OnboardingPage';
 import { httpAuthGateway } from './features/onboarding/infra/http-auth-gateway';
 import { localSessionStore } from './features/onboarding/infra/local-session-store';
 import { httpParticipantsGateway } from './features/participants/infra/http-participants-gateway';
+import { httpKudosGateway } from './features/kudos/infra/http-kudos-gateway';
 
 const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8787';
 const auth = httpAuthGateway(apiUrl);
 const session = localSessionStore();
 const participants = httpParticipantsGateway(apiUrl);
+const kudos = httpKudosGateway(apiUrl);
 
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={participants} />} />
+      <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} participants={participants} kudos={kudos} />} />
     </Routes>
   );
 }

@@ -5,15 +5,17 @@ import { joinEvent } from '../application/join-event';
 import type { AuthGateway, SessionStore } from '../domain/ports';
 import { ParticipantsList } from '../../participants/ui/ParticipantsList';
 import type { ParticipantsGateway } from '../../participants/domain/ports';
+import type { KudosGateway } from '../../kudos/domain/ports';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
   session: SessionStore;
   participants: ParticipantsGateway;
+  kudos: KudosGateway;
   onJoined?: (s: { token: string; profile: Profile }) => void;
 }
 
-export function OnboardingPage({ auth, session, participants, onJoined }: OnboardingPageProps) {
+export function OnboardingPage({ auth, session, participants, kudos, onJoined }: OnboardingPageProps) {
   const { slug = '' } = useParams();
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,7 @@ export function OnboardingPage({ auth, session, participants, onJoined }: Onboar
           token={joined.token}
           currentProfileId={joined.profile.id}
           gateway={participants}
+          kudos={kudos}
         />
       </main>
     );
