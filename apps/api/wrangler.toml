@@ -9,7 +9,7 @@ class_name = "EventChannel"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["EventChannel"]
+new_sqlite_classes = ["EventChannel"]
 
 [vars]
 # DATABASE_URL e JWT_SECRET devem ser definidos como secrets em produção:
