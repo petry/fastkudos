@@ -17,3 +17,17 @@ describe('GET /events/:slug/profiles (borda)', () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe('GET /events/:slug/stream (borda)', () => {
+  it('retorna 426 quando não é upgrade WS', async () => {
+    const res = await app.request('http://local/events/demo/stream?token=t');
+    expect(res.status).toBe(426);
+  });
+
+  it('retorna 401 sem token', async () => {
+    const res = await app.request('http://local/events/demo/stream', {
+      headers: { Upgrade: 'websocket' },
+    });
+    expect(res.status).toBe(401);
+  });
+});

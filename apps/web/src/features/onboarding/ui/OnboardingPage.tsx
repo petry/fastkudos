@@ -8,6 +8,8 @@ import type { ParticipantsGateway } from '../../participants/domain/ports';
 import type { KudosGateway } from '../../kudos/domain/ports';
 import { InboxList } from '../../inbox/ui/InboxList';
 import type { InboxGateway } from '../../inbox/domain/ports';
+import { MuralFeed } from '../../mural/ui/MuralFeed';
+import type { EventStream } from '../../mural/domain/ports';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
@@ -15,6 +17,7 @@ export interface OnboardingPageProps {
   participants: ParticipantsGateway;
   kudos: KudosGateway;
   inbox: InboxGateway;
+  stream: EventStream;
   onJoined?: (s: { token: string; profile: Profile }) => void;
 }
 
@@ -24,6 +27,7 @@ export function OnboardingPage({
   participants,
   kudos,
   inbox,
+  stream,
   onJoined,
 }: OnboardingPageProps) {
   const { slug = '' } = useParams();
@@ -49,6 +53,12 @@ export function OnboardingPage({
           <h2 className="text-lg font-semibold">Caixa de recados</h2>
           <div className="mt-2">
             <InboxList token={joined.token} gateway={inbox} />
+          </div>
+        </section>
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold">Mural</h2>
+          <div className="mt-2">
+            <MuralFeed slug={slug} token={joined.token} stream={stream} />
           </div>
         </section>
       </main>
