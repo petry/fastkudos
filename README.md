@@ -34,3 +34,7 @@ cp .env.example .env
 | `pnpm -F @fastkudos/api db:migrate` | aplica migrations no `DATABASE_URL` |
 
 Ver `CLAUDE.md` para arquitetura, convenções e política de TDD.
+
+## Deploy
+
+Ver `DEPLOY.md` — Cloudflare Pages (web) + Cloudflare Workers (api) + Neon (Postgres).
