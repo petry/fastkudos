@@ -1,0 +1,31 @@
+{
+  "version": "0.2",
+  "language": "en,pt,pt-BR",
+  "ignorePaths": [
+    "node_modules/**",
+    "dist/**",
+    ".wrangler/**",
+    "playwright-report/**",
+    "coverage/**",
+    "pnpm-lock.yaml",
+    "**/migrations/**"
+  ],
+  "words": [
+    "fastkudos",
+    "neondatabase",
+    "drizzle",
+    "kebab",
+    "kudo",
+    "kudos",
+    "Hono",
+    "Wrangler",
+    "supabase",
+    "tanstack",
+    "vitest",
+    "tailwindcss",
+    "autoprefixer",
+    "jsdom",
+    "testcontainers",
+    "ESPEC"
+  ]
+}

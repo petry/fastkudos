@@ -13,12 +13,12 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /fastkudos/i })).toBeInTheDocument();
   });
 
-  it('renderiza placeholder do evento em /e/:slug', () => {
+  it('renderiza onboarding em /e/:slug', () => {
     render(
       <MemoryRouter initialEntries={['/e/demo']}>
         <App />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/onboarding do participante/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /entrar no evento/i })).toBeInTheDocument();
   });
 });

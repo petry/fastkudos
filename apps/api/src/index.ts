@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { authRoutes } from './routes/auth';
 
 export { EventChannel } from './realtime/event-channel';
 
@@ -15,6 +16,6 @@ app.use('*', cors());
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
-// Próximas iterações (TDD) montarão rotas em src/routes e plugarão aqui.
+app.route('/auth', authRoutes);
 
 export default app;

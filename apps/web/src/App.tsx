@@ -1,10 +1,17 @@
 import { Route, Routes } from 'react-router-dom';
+import { OnboardingPage } from './features/onboarding/ui/OnboardingPage';
+import { httpAuthGateway } from './features/onboarding/infra/http-auth-gateway';
+import { localSessionStore } from './features/onboarding/infra/local-session-store';
+
+const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8787';
+const auth = httpAuthGateway(apiUrl);
+const session = localSessionStore();
 
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/e/:slug" element={<EventPlaceholder />} />
+      <Route path="/e/:slug" element={<OnboardingPage auth={auth} session={session} />} />
     </Routes>
   );
 }
@@ -16,14 +23,6 @@ function Home() {
       <p className="mt-2 text-slate-600">
         Acesse via link do seu evento: <code>/e/&lt;slug&gt;</code>.
       </p>
-    </main>
-  );
-}
-
-function EventPlaceholder() {
-  return (
-    <main className="mx-auto max-w-md p-6">
-      <p>Em breve: onboarding do participante.</p>
     </main>
   );
 }
