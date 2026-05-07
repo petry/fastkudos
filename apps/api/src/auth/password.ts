@@ -1,7 +1,9 @@
 // PBKDF2-SHA256 sobre WebCrypto. Funciona em Workers, Node 18+ e jsdom.
 // Formato armazenado: pbkdf2$<iter>$<saltB64>$<hashB64>
 
-const ITERATIONS = 210_000;
+/** Limite duro do Workers: PBKDF2 lança NotSupportedError acima disso. */
+export const WORKERS_PBKDF2_MAX_ITERATIONS = 100_000;
+const ITERATIONS = WORKERS_PBKDF2_MAX_ITERATIONS;
 const SALT_BYTES = 16;
 const KEY_BYTES = 32;
 const enc = new TextEncoder();

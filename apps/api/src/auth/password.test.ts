@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hashPassword, verifyPassword } from './password';
+import { hashPassword, verifyPassword, WORKERS_PBKDF2_MAX_ITERATIONS } from './password';
 
 describe('password', () => {
   it('faz round-trip com senha correta', async () => {
@@ -22,5 +22,15 @@ describe('password', () => {
 
   it('rejeita formato inválido', async () => {
     expect(await verifyPassword('x', 'lixo')).toBe(false);
+  });
+
+  // Regressão: Cloudflare Workers lançam NotSupportedError em PBKDF2 com mais de
+  // 100k iterações, derrubando /auth/login com 500. Se alguém aumentar o
+  // contador sem perceber, este teste falha antes do deploy.
+  it('hash gerado fica dentro do limite de iterações do Workers', async () => {
+    expect(WORKERS_PBKDF2_MAX_ITERATIONS).toBeLessThanOrEqual(100_000);
+    const stored = await hashPassword('qualquer');
+    const iterations = Number(stored.split('$')[1]);
+    expect(iterations).toBeLessThanOrEqual(100_000);
   });
 });
