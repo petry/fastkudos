@@ -31,11 +31,19 @@ const PREVIEW_KUDOS: Feedback[] = [
   },
 ];
 
-const STEPS = [
+type Step = {
+  icon: typeof CalendarPlus;
+  title: string;
+  description: string;
+  cta?: { label: string; to: string };
+};
+
+const STEPS: Step[] = [
   {
     icon: CalendarPlus,
     title: 'Crie seu evento',
     description: 'Adicione o nome e receba um mural de feedbacks.',
+    cta: { label: 'Começar agora', to: '/login' },
   },
   {
     icon: QrCode,
@@ -93,6 +101,18 @@ export function HomePage() {
           <p className="mx-auto mt-3 max-w-xl text-sm text-white/80 md:text-base">
             Transforma eventos de integração em uma chuva de kudos. Sem login, sem atrito.
           </p>
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-base font-semibold text-sky-700 shadow-lg shadow-sky-900/20 transition hover:bg-sky-50 hover:shadow-xl"
+            >
+              Criar evento agora
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <p className="text-xs text-white/80">
+              Grátis. Sem cadastro para participantes.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -103,7 +123,7 @@ export function HomePage() {
             return (
               <li
                 key={step.title}
-                className="rounded-2xl border border-slate-100 bg-white p-6 shadow-kudo"
+                className="flex flex-col rounded-2xl border border-slate-100 bg-white p-6 shadow-kudo"
               >
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-rose-500 text-white">
@@ -113,6 +133,17 @@ export function HomePage() {
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-slate-900">{step.title}</h3>
                 <p className="mt-2 text-sm text-slate-600">{step.description}</p>
+                {step.cta && (
+                  <div className="mt-auto pt-4">
+                    <Link
+                      to={step.cta.to}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-500 to-rose-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:from-sky-600 hover:to-rose-600"
+                    >
+                      {step.cta.label}
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </div>
+                )}
               </li>
             );
           })}

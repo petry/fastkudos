@@ -40,6 +40,18 @@ describe('<HomePage>', () => {
     expect(link).toHaveAttribute('href', '/login');
   });
 
+  it('tem CTA primária no hero apontando para /login', () => {
+    setup();
+    const link = screen.getByRole('link', { name: /criar evento agora/i });
+    expect(link).toHaveAttribute('href', '/login');
+  });
+
+  it('tem CTA "Começar agora" no card do passo 1 apontando para /login', () => {
+    setup();
+    const link = screen.getByRole('link', { name: /começar agora/i });
+    expect(link).toHaveAttribute('href', '/login');
+  });
+
   it('tem link "Fork me on GitHub" para o repositório', () => {
     setup();
     const link = screen.getByRole('link', { name: /fork me on github/i });
