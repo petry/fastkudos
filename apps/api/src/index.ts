@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { authRoutes } from './routes/auth';
+import { eventRoutes } from './routes/events';
 
 export { EventChannel } from './realtime/event-channel';
 
@@ -17,5 +18,6 @@ app.use('*', cors());
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
 app.route('/auth', authRoutes);
+app.route('/events', eventRoutes);
 
 export default app;

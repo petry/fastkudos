@@ -3,14 +3,17 @@ import { useParams } from 'react-router-dom';
 import type { Profile } from '@fastkudos/shared';
 import { joinEvent } from '../application/join-event';
 import type { AuthGateway, SessionStore } from '../domain/ports';
+import { ParticipantsList } from '../../participants/ui/ParticipantsList';
+import type { ParticipantsGateway } from '../../participants/domain/ports';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
   session: SessionStore;
+  participants: ParticipantsGateway;
   onJoined?: (s: { token: string; profile: Profile }) => void;
 }
 
-export function OnboardingPage({ auth, session, onJoined }: OnboardingPageProps) {
+export function OnboardingPage({ auth, session, participants, onJoined }: OnboardingPageProps) {
   const { slug = '' } = useParams();
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +26,12 @@ export function OnboardingPage({ auth, session, onJoined }: OnboardingPageProps)
     return (
       <main className="mx-auto max-w-md p-6">
         <p data-testid="welcome">Olá, {joined.profile.displayName}!</p>
+        <ParticipantsList
+          slug={slug}
+          token={joined.token}
+          currentProfileId={joined.profile.id}
+          gateway={participants}
+        />
       </main>
     );
   }
