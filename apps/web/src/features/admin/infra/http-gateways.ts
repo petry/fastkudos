@@ -1,3 +1,4 @@
+import type { Event, Feedback } from '@fastkudos/shared';
 import type { AdminAuthGateway, AdminEventsGateway } from '../domain/ports';
 
 export function httpAdminAuthGateway(baseUrl: string, fetchImpl: typeof fetch = fetch): AdminAuthGateway {
@@ -31,6 +32,27 @@ export function httpAdminEventsGateway(baseUrl: string, fetchImpl: typeof fetch 
       }
       const data = (await res.json()) as { event: { id: string; slug: string; name: string } };
       return data.event;
+    },
+    async list({ token }) {
+      const res = await fetchImpl(`${baseUrl}/admin/events`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`list_failed_${res.status}`);
+      return ((await res.json()) as { events: Event[] }).events;
+    },
+    async feedbacks({ token, eventId }) {
+      const res = await fetchImpl(`${baseUrl}/admin/events/${encodeURIComponent(eventId)}/feedbacks`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`feedbacks_failed_${res.status}`);
+      return ((await res.json()) as { feedbacks: Feedback[] }).feedbacks;
+    },
+    async deleteFeedback({ token, feedbackId }) {
+      const res = await fetchImpl(`${baseUrl}/admin/feedbacks/${encodeURIComponent(feedbackId)}`, {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`delete_failed_${res.status}`);
     },
   };
 }

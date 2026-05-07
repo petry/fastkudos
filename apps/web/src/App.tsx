@@ -8,6 +8,7 @@ import { httpInboxGateway } from './features/inbox/infra/http-inbox-gateway';
 import { websocketStream } from './features/mural/infra/websocket-stream';
 import { AdminLoginPage } from './features/admin/ui/AdminLoginPage';
 import { AdminDashboardPage } from './features/admin/ui/AdminDashboardPage';
+import { ModerationPage } from './features/admin/ui/ModerationPage';
 import {
   httpAdminAuthGateway,
   httpAdminEventsGateway,
@@ -46,6 +47,10 @@ export function App() {
       <Route
         path="/admin"
         element={<AdminDashboardPage session={adminSession} events={adminEvents} />}
+      />
+      <Route
+        path="/admin/events/:id"
+        element={<ModerationPage session={adminSession} gateway={adminEvents} />}
       />
     </Routes>
   );

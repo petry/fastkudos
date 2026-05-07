@@ -7,6 +7,9 @@ import type { AdminEventsGateway } from '../domain/ports';
 function setup(impl?: AdminEventsGateway['create']) {
   const gateway: AdminEventsGateway = {
     create: impl ?? vi.fn(async ({ name, slug }) => ({ id: 'e1', name, slug })),
+    list: vi.fn(async () => []),
+    feedbacks: vi.fn(async () => []),
+    deleteFeedback: vi.fn(),
   };
   render(<CreateEventForm token="tok" gateway={gateway} />);
   return { gateway };

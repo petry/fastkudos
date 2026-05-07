@@ -63,6 +63,32 @@ describe('rotas /admin (borda)', () => {
   });
 });
 
+describe('GET /admin/events (borda)', () => {
+  it('retorna 401 sem token', async () => {
+    const res = await app.request('http://local/admin/events', {}, env);
+    expect(res.status).toBe(401);
+  });
+  it('retorna 403 para não-admin', async () => {
+    const res = await app.request(
+      'http://local/admin/events',
+      { headers: { authorization: `Bearer ${await anonToken()}` } },
+      env,
+    );
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('GET /admin/events/:id/feedbacks (borda)', () => {
+  it('retorna 403 para não-admin', async () => {
+    const res = await app.request(
+      'http://local/admin/events/x/feedbacks',
+      { headers: { authorization: `Bearer ${await anonToken()}` } },
+      env,
+    );
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('POST /auth/login (borda)', () => {
   it('retorna 400 com input inválido', async () => {
     const res = await app.request('http://local/auth/login', {

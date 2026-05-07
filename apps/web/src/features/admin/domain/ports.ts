@@ -7,8 +7,13 @@ export interface AdminAuthGateway {
   login(input: { email: string; password: string }): Promise<AdminSession>;
 }
 
+import type { Event, Feedback } from '@fastkudos/shared';
+
 export interface AdminEventsGateway {
   create(input: { token: string; name: string; slug: string }): Promise<{ id: string; slug: string; name: string }>;
+  list(input: { token: string }): Promise<Event[]>;
+  feedbacks(input: { token: string; eventId: string }): Promise<Feedback[]>;
+  deleteFeedback(input: { token: string; feedbackId: string }): Promise<void>;
 }
 
 export interface AdminSessionStore {

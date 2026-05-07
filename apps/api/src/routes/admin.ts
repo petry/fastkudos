@@ -13,11 +13,43 @@ import {
   eventRepo,
   feedbackOwnership,
   profileOwnership,
+  ownedEventsRepo,
+  ownedEventLookup,
+  eventFeedbacksRepo,
 } from '../features/admin/infra/repos';
+import { listOwnedEvents } from '../features/admin/application/list-owned-events';
+import {
+  ForbiddenError as ListForbidden,
+  NotFoundError as ListNotFound,
+  listEventFeedbacks,
+} from '../features/admin/application/list-event-feedbacks';
 
 export const adminRoutes = new Hono<AuthContext>();
 
 adminRoutes.use('*', requireAuth(), requireAdmin());
+
+adminRoutes.get('/events', async (c) => {
+  const user = getUser(c);
+  const db = createDb(c.env.DATABASE_URL);
+  const events = await listOwnedEvents({ events: ownedEventsRepo(db) }, { ownerId: user.profileId });
+  return c.json({ events });
+});
+
+adminRoutes.get('/events/:id/feedbacks', async (c) => {
+  const user = getUser(c);
+  const db = createDb(c.env.DATABASE_URL);
+  try {
+    const feedbacks = await listEventFeedbacks(
+      { events: ownedEventLookup(db), feedbacks: eventFeedbacksRepo(db) },
+      { eventId: c.req.param('id'), adminId: user.profileId },
+    );
+    return c.json({ feedbacks });
+  } catch (e) {
+    if (e instanceof ListNotFound) return c.json({ error: 'not_found' }, 404);
+    if (e instanceof ListForbidden) return c.json({ error: 'forbidden' }, 403);
+    throw e;
+  }
+});
 
 adminRoutes.post('/events', async (c) => {
   const user = getUser(c);

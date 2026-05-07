@@ -1,4 +1,5 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
+import type { Event, Feedback } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
 import { adminUsers, events, feedbacks, profiles } from '../../../../drizzle/schema';
 import type {
@@ -7,6 +8,11 @@ import type {
   FeedbackOwnership,
   ProfileOwnership,
 } from '../domain/ports';
+import type { OwnedEventsRepo } from '../application/list-owned-events';
+import type {
+  EventFeedbacksRepo,
+  OwnedEventLookup,
+} from '../application/list-event-feedbacks';
 
 export function adminUserRepo(db: Database): AdminUserRepo {
   return {
@@ -62,6 +68,58 @@ export function profileOwnership(db: Database): ProfileOwnership {
     },
     async delete(profileId) {
       await db.delete(profiles).where(eq(profiles.id, profileId));
+    },
+  };
+}
+
+export function ownedEventsRepo(db: Database): OwnedEventsRepo {
+  return {
+    async listByOwner(ownerId) {
+      const rows = await db
+        .select()
+        .from(events)
+        .where(eq(events.ownerId, ownerId))
+        .orderBy(desc(events.createdAt));
+      return rows.map<Event>((r) => ({
+        id: r.id,
+        createdAt: r.createdAt.toISOString(),
+        name: r.name,
+        slug: r.slug,
+        ownerId: r.ownerId,
+      }));
+    },
+  };
+}
+
+export function ownedEventLookup(db: Database): OwnedEventLookup {
+  return {
+    async ownerOfEvent(eventId) {
+      const rows = await db
+        .select({ ownerId: events.ownerId })
+        .from(events)
+        .where(eq(events.id, eventId))
+        .limit(1);
+      return rows[0]?.ownerId ?? null;
+    },
+  };
+}
+
+export function eventFeedbacksRepo(db: Database): EventFeedbacksRepo {
+  return {
+    async listByEvent(eventId) {
+      const rows = await db
+        .select()
+        .from(feedbacks)
+        .where(eq(feedbacks.eventId, eventId))
+        .orderBy(desc(feedbacks.createdAt));
+      return rows.map<Feedback>((r) => ({
+        id: r.id,
+        createdAt: r.createdAt.toISOString(),
+        senderId: r.senderId,
+        receiverId: r.receiverId,
+        eventId: r.eventId,
+        content: r.content,
+      }));
     },
   };
 }
