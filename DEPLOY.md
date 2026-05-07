@@ -30,7 +30,7 @@ pnpm exec wrangler secret put DATABASE_URL    # cole a string Neon
 pnpm exec wrangler secret put JWT_SECRET      # gere com: openssl rand -hex 32
 
 # deploy
-pnpm deploy   # equivale a `wrangler deploy`
+pnpm deploy:worker   # equivale a `wrangler deploy`
 ```
 
 Após o deploy, anote a URL do Worker (algo como
@@ -66,7 +66,7 @@ O build roda em CI Cloudflare a cada push.
 ```bash
 cd apps/web
 VITE_API_URL=https://api.fastkudos.app pnpm build
-pnpm deploy   # `wrangler pages deploy dist --project-name=fastkudos-web`
+pnpm deploy:pages   # `wrangler pages deploy dist --project-name=fastkudos-web`
 ```
 
 O arquivo `public/_redirects` (`/*  /index.html  200`) garante o roteamento

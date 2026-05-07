@@ -11,7 +11,7 @@
     "test:e2e": "playwright test",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "deploy": "wrangler pages deploy dist --project-name=fastkudos-web"
+    "deploy:pages": "wrangler pages deploy dist --project-name=fastkudos-web"
   },
   "dependencies": {
     "@fastkudos/shared": "workspace:*",
