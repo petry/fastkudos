@@ -70,7 +70,15 @@ export function CreateEventForm({ token, gateway, onCreated }: CreateEventFormPr
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       {created && (
         <p role="status" className="text-sm text-emerald-700">
-          Evento criado: <code>/e/{created.slug}</code>
+          Evento criado:{' '}
+          <a
+            href={`${window.location.origin}/e/${created.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all font-mono underline hover:text-emerald-900"
+          >
+            {`${window.location.origin}/e/${created.slug}`}
+          </a>
         </p>
       )}
     </form>

@@ -20,14 +20,19 @@ function setup(impl?: OwnedEventsGateway['create']) {
 }
 
 describe('<CreateEventForm>', () => {
-  it('cria evento e mostra confirmação', async () => {
+  it('cria evento e mostra a URL canônica como link clicável em nova aba', async () => {
     const user = userEvent.setup();
     const { gateway } = setup();
     await user.type(screen.getByLabelText('Nome do evento'), 'Demo');
     await user.type(screen.getByLabelText('Slug'), 'demo');
     await user.click(screen.getByRole('button', { name: /criar/i }));
     expect(gateway.create).toHaveBeenCalledWith({ token: 'tok', name: 'Demo', slug: 'demo' });
-    expect(await screen.findByRole('status')).toHaveTextContent('/e/demo');
+    const expectedUrl = `${window.location.origin}/e/demo`;
+    const link = await screen.findByRole('link', { name: expectedUrl });
+    expect(link).toHaveAttribute('href', expectedUrl);
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    expect(screen.getByRole('status')).toHaveTextContent(`Evento criado: ${expectedUrl}`);
   });
 
   it('rejeita slug inválido localmente sem chamar gateway', async () => {
