@@ -6,16 +6,26 @@ import type { AuthGateway, SessionStore } from '../domain/ports';
 import { ParticipantsList } from '../../participants/ui/ParticipantsList';
 import type { ParticipantsGateway } from '../../participants/domain/ports';
 import type { KudosGateway } from '../../kudos/domain/ports';
+import { InboxList } from '../../inbox/ui/InboxList';
+import type { InboxGateway } from '../../inbox/domain/ports';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
   session: SessionStore;
   participants: ParticipantsGateway;
   kudos: KudosGateway;
+  inbox: InboxGateway;
   onJoined?: (s: { token: string; profile: Profile }) => void;
 }
 
-export function OnboardingPage({ auth, session, participants, kudos, onJoined }: OnboardingPageProps) {
+export function OnboardingPage({
+  auth,
+  session,
+  participants,
+  kudos,
+  inbox,
+  onJoined,
+}: OnboardingPageProps) {
   const { slug = '' } = useParams();
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +45,12 @@ export function OnboardingPage({ auth, session, participants, kudos, onJoined }:
           gateway={participants}
           kudos={kudos}
         />
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold">Caixa de recados</h2>
+          <div className="mt-2">
+            <InboxList token={joined.token} gateway={inbox} />
+          </div>
+        </section>
       </main>
     );
   }
