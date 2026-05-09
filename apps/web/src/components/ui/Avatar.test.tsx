@@ -40,4 +40,11 @@ describe('<Avatar>', () => {
     expect(container.querySelector('img')).toBeNull();
     expect(container.textContent).toBe('AS');
   });
+
+  it('não força referrerPolicy="no-referrer" (quebra em Safari/ITP)', () => {
+    const { getByRole } = render(
+      <Avatar name="Ana" imageUrl="https://lh.googleusercontent.com/a/x.png" />,
+    );
+    expect(getByRole('img')).not.toHaveAttribute('referrerpolicy', 'no-referrer');
+  });
 });

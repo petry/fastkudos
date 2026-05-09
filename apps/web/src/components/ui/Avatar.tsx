@@ -29,7 +29,8 @@ export function Avatar({ name, imageUrl, size = 'md', className = '' }: AvatarPr
         <img
           src={imageUrl}
           alt={name}
-          referrerPolicy="no-referrer"
+          loading="lazy"
+          decoding="async"
           onError={() => setErrored(true)}
           className="h-full w-full object-cover"
         />
