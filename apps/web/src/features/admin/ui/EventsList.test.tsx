@@ -26,7 +26,7 @@ describe('<EventsList>', () => {
       { id: 'e1', createdAt: new Date().toISOString(), name: 'Demo', slug: 'demo', ownerId: 'a' },
     ];
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventsList token="t" gateway={gw(events)} />
       </MemoryRouter>,
     );
@@ -37,7 +37,7 @@ describe('<EventsList>', () => {
 
   it('mostra estado vazio', async () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventsList token="t" gateway={gw([])} />
       </MemoryRouter>,
     );
@@ -57,7 +57,7 @@ describe('<EventsList>', () => {
       ];
       const gateway = gw(events);
       render(
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <EventsList token="t" gateway={gateway} />
         </MemoryRouter>,
       );
@@ -75,7 +75,7 @@ describe('<EventsList>', () => {
       ];
       const gateway = gw(events);
       render(
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <EventsList token="t" gateway={gateway} />
         </MemoryRouter>,
       );
@@ -99,7 +99,7 @@ describe('<EventsList>', () => {
       }));
       const gateway = gw(events, { update });
       render(
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <EventsList token="t" gateway={gateway} />
         </MemoryRouter>,
       );
@@ -131,7 +131,7 @@ describe('<EventsList>', () => {
       const update = vi.fn();
       const gateway = gw(events, { update });
       render(
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <EventsList token="t" gateway={gateway} />
         </MemoryRouter>,
       );
@@ -152,7 +152,7 @@ describe('<EventsList>', () => {
       ];
       const gateway = gw(events);
       render(
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <EventsList token="t" gateway={gateway} />
         </MemoryRouter>,
       );

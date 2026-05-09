@@ -6,7 +6,7 @@ import { App } from './App';
 describe('App', () => {
   it('renderiza Home na raiz', () => {
     render(
-      <MemoryRouter initialEntries={['/']}>
+      <MemoryRouter initialEntries={['/']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <App />
       </MemoryRouter>,
     );
@@ -15,7 +15,7 @@ describe('App', () => {
 
   it('renderiza onboarding em /e/:slug', () => {
     render(
-      <MemoryRouter initialEntries={['/e/demo']}>
+      <MemoryRouter initialEntries={['/e/demo']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <App />
       </MemoryRouter>,
     );

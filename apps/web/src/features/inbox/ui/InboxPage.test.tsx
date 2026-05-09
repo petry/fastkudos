@@ -29,7 +29,7 @@ function setup(opts: {
     list: vi.fn(async () => opts.feedbacks ?? []),
   };
   render(
-    <MemoryRouter initialEntries={['/e/demo/inbox']}>
+    <MemoryRouter initialEntries={['/e/demo/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route
           path="/e/:slug/inbox"

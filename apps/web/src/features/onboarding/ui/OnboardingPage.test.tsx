@@ -43,7 +43,7 @@ function setup(opts: SetupOptions = {}) {
     fetchMe: vi.fn(),
   };
   render(
-    <MemoryRouter initialEntries={['/e/demo']}>
+    <MemoryRouter initialEntries={['/e/demo']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route
           path="/e/:slug"
@@ -93,10 +93,11 @@ describe('<OnboardingPage> anônimo', () => {
     expect(await screen.findByTestId('welcome')).toHaveTextContent('Olá, Alice!');
   });
 
-  it('mostra mensagem de boas-vindas direto quando há sessão em cache', () => {
+  it('mostra mensagem de boas-vindas direto quando há sessão em cache', async () => {
     setup({
       cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
+    await screen.findByText('Demo');
     expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Bob!');
   });
 
@@ -108,20 +109,22 @@ describe('<OnboardingPage> anônimo', () => {
     expect(screen.queryByText('/e/demo')).not.toBeInTheDocument();
   });
 
-  it('mostra link Caixa de recados à esquerda do botão Sair', () => {
+  it('mostra link Caixa de recados à esquerda do botão Sair', async () => {
     setup({
       cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
+    await screen.findByText('Demo');
     const inboxLink = screen.getByRole('link', { name: /caixa de recados/i });
     expect(inboxLink).toHaveAttribute('href', '/e/demo/inbox');
     const leave = screen.getByRole('button', { name: /sair/i });
     expect(inboxLink.compareDocumentPosition(leave) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('não renderiza a caixa de recados na home do evento', () => {
+  it('não renderiza a caixa de recados na home do evento', async () => {
     setup({
       cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
+    await screen.findByText('Demo');
     expect(screen.queryByText(/sua caixa de recados/i)).not.toBeInTheDocument();
   });
 
@@ -181,7 +184,7 @@ describe('<OnboardingPage> user logado', () => {
     expect(screen.queryByLabelText('Seu nome')).not.toBeInTheDocument();
   });
 
-  it('quando há sessão anônima em cache, ignora a sessão de user e mostra a UI joined', () => {
+  it('quando há sessão anônima em cache, ignora a sessão de user e mostra a UI joined', async () => {
     setup({
       loggedUser: loggedAlice,
       cached: {
@@ -189,6 +192,7 @@ describe('<OnboardingPage> user logado', () => {
         profile: { id: 'p-anon', displayName: 'Anônimo', eventId: 'e1', isAdmin: false, avatarUrl: null },
       },
     });
+    await screen.findByText('Demo');
     expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Anônimo!');
   });
 });

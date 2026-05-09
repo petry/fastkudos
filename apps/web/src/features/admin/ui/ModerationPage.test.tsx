@@ -49,7 +49,7 @@ function setup(opts?: { feedbacks?: Feedback[]; profiles?: Profile[] }) {
     clear: vi.fn(),
   };
   render(
-    <MemoryRouter initialEntries={['/dashboard/events/e1']}>
+    <MemoryRouter initialEntries={['/dashboard/events/e1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route
           path="/dashboard/events/:id"
