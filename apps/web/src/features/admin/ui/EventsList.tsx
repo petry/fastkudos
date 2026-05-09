@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   AlertCircle,
   CalendarDays,
+  ExternalLink,
   Eye,
   Inbox,
   Pencil,
@@ -143,11 +144,16 @@ export function EventsList({ token, gateway }: EventsListProps) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-900">{e.name}</p>
-              <p className="mt-0.5 text-xs">
-                <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
-                  /e/{e.slug}
-                </code>
-              </p>
+              <a
+                href={`/e/${e.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Abrir página pública do evento"
+                className="mt-0.5 inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600 transition hover:bg-sky-50 hover:text-sky-700"
+              >
+                /e/{e.slug}
+                <ExternalLink className="h-3 w-3" aria-hidden="true" />
+              </a>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <Link
