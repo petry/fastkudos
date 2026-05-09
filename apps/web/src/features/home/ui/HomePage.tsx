@@ -6,10 +6,10 @@ import { KudoCard } from '../../../components/ui/KudoCard';
 const GITHUB_REPO_URL = 'https://github.com/petry/fastkudos';
 
 const PREVIEW_PROFILES = new Map<string, Profile>([
-  ['ana', { id: 'ana', displayName: 'Ana', eventId: 'demo', isAdmin: false }],
-  ['bruno', { id: 'bruno', displayName: 'Bruno', eventId: 'demo', isAdmin: false }],
-  ['carla', { id: 'carla', displayName: 'Carla', eventId: 'demo', isAdmin: false }],
-  ['diego', { id: 'diego', displayName: 'Diego', eventId: 'demo', isAdmin: false }],
+  ['ana', { id: 'ana', displayName: 'Ana', eventId: 'demo', isAdmin: false, avatarUrl: null }],
+  ['bruno', { id: 'bruno', displayName: 'Bruno', eventId: 'demo', isAdmin: false, avatarUrl: null }],
+  ['carla', { id: 'carla', displayName: 'Carla', eventId: 'demo', isAdmin: false, avatarUrl: null }],
+  ['diego', { id: 'diego', displayName: 'Diego', eventId: 'demo', isAdmin: false, avatarUrl: null }],
 ]);
 
 const PREVIEW_KUDOS: Feedback[] = [

@@ -54,7 +54,7 @@ export function ParticipantsList({
               className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm"
             >
               <div className="flex items-center gap-3">
-                <Avatar name={p.displayName} size="md" />
+                <Avatar name={p.displayName} imageUrl={p.avatarUrl} size="md" />
                 <span
                   className="flex-1 truncate text-sm font-medium text-slate-800"
                   title={p.displayName}

@@ -17,6 +17,7 @@ const ANON: Profile = {
   displayName: 'Alguém',
   eventId: '',
   isAdmin: false,
+  avatarUrl: null,
 };
 
 export function KudoCard({ variant, feedback, profilesById, currentProfileId }: KudoCardProps) {
@@ -29,15 +30,15 @@ export function KudoCard({ variant, feedback, profilesById, currentProfileId }: 
       <header className="flex items-center gap-2 text-sm">
         {variant === 'mural' ? (
           <>
-            <Avatar name={sender.displayName} size="sm" />
+            <Avatar name={sender.displayName} imageUrl={sender.avatarUrl} size="sm" />
             <span className="font-semibold text-slate-800">{sender.displayName}</span>
             <ArrowRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
-            <Avatar name={receiver.displayName} size="sm" />
+            <Avatar name={receiver.displayName} imageUrl={receiver.avatarUrl} size="sm" />
             <span className="font-semibold text-slate-800">{receiver.displayName}</span>
           </>
         ) : (
           <>
-            <Avatar name={sender.displayName} size="sm" />
+            <Avatar name={sender.displayName} imageUrl={sender.avatarUrl} size="sm" />
             <span className="text-slate-500">De</span>
             <span className="font-semibold text-slate-800">{sender.displayName}</span>
           </>

@@ -33,12 +33,17 @@ beforeEach(async () => {
   await ctx.reset();
 });
 
-async function seedOwner(email: string, role: 'user' | 'superadmin' = 'user') {
+async function seedOwner(
+  email: string,
+  role: 'user' | 'superadmin' = 'user',
+  avatarUrl: string | null = null,
+) {
   const [u] = await ctx.db
     .insert(users)
     .values({
       email,
       name: email,
+      avatarUrl,
       role,
       oauthProvider: 'google',
       oauthSub: `sub-${email}`,
@@ -287,6 +292,60 @@ describe('integração: auto-registro de user logado (event-join)', () => {
 
     const rowsAfter = await ctx.db.select().from(profiles).where(eq(profiles.eventId, e.event.id));
     expect(rowsAfter).toHaveLength(1);
+  });
+
+  it('expõe users.avatar_url no profile retornado e na listagem; anônimo fica com avatarUrl=null', async () => {
+    const e = await seedEvent('event-join-avatar');
+    // Owner com avatar do Google.
+    await ctx.db
+      .update(users)
+      .set({ avatarUrl: 'https://lh.googleusercontent.com/owner.png' })
+      .where(eq(users.id, e.owner.id));
+
+    const ownerJwt = await userToken(e.owner.id, e.owner.name);
+    const join = await app.request(
+      'http://local/auth/event-join',
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${ownerJwt}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'event-join-avatar' }),
+      },
+      envFor(),
+    );
+    expect(join.status).toBe(201);
+    const joinBody = (await join.json()) as {
+      token: string;
+      profile: { id: string; avatarUrl: string | null };
+    };
+    expect(joinBody.profile.avatarUrl).toBe('https://lh.googleusercontent.com/owner.png');
+
+    // Participante anônimo no mesmo evento — sem userId, avatar deve ser null.
+    const anon = await app.request(
+      'http://local/auth/anon',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ slug: 'event-join-avatar', displayName: 'Anônima' }),
+      },
+      envFor(),
+    );
+    expect(anon.status).toBe(201);
+    const anonBody = (await anon.json()) as { profile: { avatarUrl: string | null } };
+    expect(anonBody.profile.avatarUrl).toBeNull();
+
+    // GET /events/:slug/profiles deve trazer o avatar do owner e null pra anônima.
+    const list = await app.request(
+      `http://local/events/event-join-avatar/profiles`,
+      { headers: { authorization: `Bearer ${joinBody.token}` } },
+      envFor(),
+    );
+    expect(list.status).toBe(200);
+    const listBody = (await list.json()) as {
+      profiles: Array<{ displayName: string; avatarUrl: string | null }>;
+    };
+    const byName = new Map(listBody.profiles.map((p) => [p.displayName, p.avatarUrl]));
+    expect(byName.get(e.owner.name)).toBe('https://lh.googleusercontent.com/owner.png');
+    expect(byName.get('Anônima')).toBeNull();
   });
 
   it('retorna 404 quando o slug não existe', async () => {

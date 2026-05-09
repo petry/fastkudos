@@ -25,11 +25,11 @@ function setup(opts: SetupOptions = {}) {
   const auth: AuthGateway = {
     registerAnon: vi.fn(async ({ displayName }) => ({
       token: 'tok',
-      profile: { id: 'p1', displayName, eventId: 'e1', isAdmin: false },
+      profile: { id: 'p1', displayName, eventId: 'e1', isAdmin: false, avatarUrl: null },
     })),
     eventJoin: vi.fn(async () => ({
       token: 'tok-user',
-      profile: { id: 'p-user', displayName: 'Logado', eventId: 'e1', isAdmin: false },
+      profile: { id: 'p-user', displayName: 'Logado', eventId: 'e1', isAdmin: false, avatarUrl: null },
     })),
     ...opts.authOverrides,
   };
@@ -95,14 +95,14 @@ describe('<OnboardingPage> anônimo', () => {
 
   it('mostra mensagem de boas-vindas direto quando há sessão em cache', () => {
     setup({
-      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false } },
+      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
     expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Bob!');
   });
 
   it('exibe o nome do evento no header em vez da URL', async () => {
     setup({
-      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false } },
+      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
     expect(await screen.findByTestId('event-name')).toHaveTextContent('Demo');
     expect(screen.queryByText('/e/demo')).not.toBeInTheDocument();
@@ -110,7 +110,7 @@ describe('<OnboardingPage> anônimo', () => {
 
   it('mostra link Caixa de recados à esquerda do botão Sair', () => {
     setup({
-      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false } },
+      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
     const inboxLink = screen.getByRole('link', { name: /caixa de recados/i });
     expect(inboxLink).toHaveAttribute('href', '/e/demo/inbox');
@@ -120,7 +120,7 @@ describe('<OnboardingPage> anônimo', () => {
 
   it('não renderiza a caixa de recados na home do evento', () => {
     setup({
-      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false } },
+      cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
     expect(screen.queryByText(/sua caixa de recados/i)).not.toBeInTheDocument();
   });
@@ -186,7 +186,7 @@ describe('<OnboardingPage> user logado', () => {
       loggedUser: loggedAlice,
       cached: {
         token: 't-anon',
-        profile: { id: 'p-anon', displayName: 'Anônimo', eventId: 'e1', isAdmin: false },
+        profile: { id: 'p-anon', displayName: 'Anônimo', eventId: 'e1', isAdmin: false, avatarUrl: null },
       },
     });
     expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Anônimo!');

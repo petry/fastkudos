@@ -5,9 +5,9 @@ import type { Profile } from '@fastkudos/shared';
 import { ParticipantsList } from './ParticipantsList';
 
 const list: Profile[] = [
-  { id: 'me', displayName: 'Eu Mesmo', eventId: 'e', isAdmin: false },
-  { id: 'p1', displayName: 'Alice', eventId: 'e', isAdmin: false },
-  { id: 'p2', displayName: 'Bob', eventId: 'e', isAdmin: false },
+  { id: 'me', displayName: 'Eu Mesmo', eventId: 'e', isAdmin: false, avatarUrl: null },
+  { id: 'p1', displayName: 'Alice', eventId: 'e', isAdmin: false, avatarUrl: null },
+  { id: 'p2', displayName: 'Bob', eventId: 'e', isAdmin: false, avatarUrl: null },
 ];
 
 function renderWith(profiles: Profile[]) {
@@ -38,7 +38,7 @@ describe('<ParticipantsList>', () => {
   });
 
   it('mostra estado vazio quando não há outros participantes', () => {
-    renderWith([{ id: 'me', displayName: 'Eu Mesmo', eventId: 'e', isAdmin: false }]);
+    renderWith([{ id: 'me', displayName: 'Eu Mesmo', eventId: 'e', isAdmin: false, avatarUrl: null }]);
     expect(screen.getByText(/nenhum participante/i)).toBeInTheDocument();
   });
 });

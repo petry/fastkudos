@@ -23,6 +23,7 @@ function makeDeps(overrides?: Partial<EventLookup>) {
         displayName,
         eventId,
         isAdmin: false,
+        avatarUrl: null,
       };
       created.push(p);
       return p;

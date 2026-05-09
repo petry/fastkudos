@@ -4,8 +4,8 @@ import { ForbiddenError, NotFoundError, listParticipants } from './list-particip
 import type { EventBySlug, ParticipantsRepo } from '../domain/ports';
 
 const profiles: Profile[] = [
-  { id: 'p1', displayName: 'Alice', eventId: 'e1', isAdmin: false },
-  { id: 'p2', displayName: 'Bob', eventId: 'e1', isAdmin: false },
+  { id: 'p1', displayName: 'Alice', eventId: 'e1', isAdmin: false, avatarUrl: null },
+  { id: 'p2', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null },
 ];
 
 function deps(overrides?: { findBySlug?: EventBySlug['findBySlug'] }) {

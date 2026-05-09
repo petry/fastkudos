@@ -8,8 +8,8 @@ import type { SessionStore } from '../../onboarding/domain/ports';
 import type { ParticipantsGateway } from '../../participants/domain/ports';
 import type { InboxGateway } from '../domain/ports';
 
-const me: Profile = { id: 'me', displayName: 'Alice', eventId: 'e1', isAdmin: false };
-const sender: Profile = { id: 's', displayName: 'Bob', eventId: 'e1', isAdmin: false };
+const me: Profile = { id: 'me', displayName: 'Alice', eventId: 'e1', isAdmin: false, avatarUrl: null };
+const sender: Profile = { id: 's', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null };
 
 function setup(opts: {
   cached?: { token: string; profile: Profile } | null;

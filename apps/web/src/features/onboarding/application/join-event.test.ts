@@ -9,6 +9,7 @@ function makeProfile(overrides?: Partial<Profile>): Profile {
     displayName: 'Alice',
     eventId: 'e1',
     isAdmin: false,
+    avatarUrl: null,
     ...overrides,
   };
 }

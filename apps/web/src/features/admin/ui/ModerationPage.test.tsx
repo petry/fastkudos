@@ -20,6 +20,7 @@ const profile = (id: string, displayName: string): Profile => ({
   displayName,
   eventId: 'e1',
   isAdmin: false,
+  avatarUrl: null,
 });
 
 function setup(opts?: { feedbacks?: Feedback[]; profiles?: Profile[] }) {

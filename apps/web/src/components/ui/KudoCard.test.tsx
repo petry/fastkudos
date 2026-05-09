@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import type { Feedback, Profile } from '@fastkudos/shared';
 import { KudoCard } from './KudoCard';
 
-const ana: Profile = { id: 's', displayName: 'Ana', eventId: 'e', isAdmin: false };
-const bruno: Profile = { id: 'r', displayName: 'Bruno', eventId: 'e', isAdmin: false };
+const ana: Profile = { id: 's', displayName: 'Ana', eventId: 'e', isAdmin: false, avatarUrl: null };
+const bruno: Profile = { id: 'r', displayName: 'Bruno', eventId: 'e', isAdmin: false, avatarUrl: null };
 
 const fb: Feedback = {
   id: 'f1',

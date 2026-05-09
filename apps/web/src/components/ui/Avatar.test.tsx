@@ -26,4 +26,18 @@ describe('<Avatar>', () => {
     const { getByLabelText } = render(<Avatar name="Ana" />);
     expect(getByLabelText('Ana')).toBeInTheDocument();
   });
+
+  it('renderiza <img> quando recebe imageUrl, com alt = nome', () => {
+    const { getByRole } = render(
+      <Avatar name="Ana Silva" imageUrl="https://lh.googleusercontent.com/a/x.png" />,
+    );
+    const img = getByRole('img', { name: 'Ana Silva' });
+    expect(img).toHaveAttribute('src', 'https://lh.googleusercontent.com/a/x.png');
+  });
+
+  it('faz fallback para iniciais quando imageUrl é nulo/undefined', () => {
+    const { container } = render(<Avatar name="Ana Silva" imageUrl={null} />);
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toBe('AS');
+  });
 });

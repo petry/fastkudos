@@ -34,6 +34,7 @@ function makeDeps(opts?: {
         displayName,
         eventId,
         isAdmin: false,
+        avatarUrl: null,
       };
       return p;
     },
@@ -66,6 +67,7 @@ describe('registerUserParticipant', () => {
       displayName: 'Alice Old',
       eventId: 'event-uuid',
       isAdmin: false,
+      avatarUrl: null,
     };
     const { deps } = makeDeps({ existing });
     const result = await registerUserParticipant(deps, { slug: 'demo', userId: 'user-1' });

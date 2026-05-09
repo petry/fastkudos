@@ -63,7 +63,7 @@ export function InboxPage({ session, participants, inbox }: InboxPageProps) {
     <main className="min-h-screen bg-slate-50">
       <header className="bg-gradient-to-br from-sky-500 via-sky-400 to-rose-400 px-6 pb-10 pt-8 text-white">
         <div className="mx-auto flex max-w-2xl items-center gap-4">
-          <Avatar name={joined.profile.displayName} size="lg" />
+          <Avatar name={joined.profile.displayName} imageUrl={joined.profile.avatarUrl} size="lg" />
           <div className="flex-1">
             <p className="text-xs uppercase tracking-wide text-white/70">Evento</p>
             <p data-testid="event-name" className="text-sm font-medium text-white/90">

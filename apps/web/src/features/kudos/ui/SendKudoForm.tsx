@@ -6,7 +6,7 @@ import type { KudosGateway } from '../domain/ports';
 import { Avatar } from '../../../components/ui/Avatar';
 
 export interface SendKudoFormProps {
-  receiver: { id: string; displayName: string };
+  receiver: { id: string; displayName: string; avatarUrl?: string | null };
   token: string;
   gateway: KudosGateway;
   onSent?: () => void;
@@ -53,7 +53,7 @@ export function SendKudoForm({ receiver, token, gateway, onSent, onCancel }: Sen
       aria-label={`Enviar kudo para ${receiver.displayName}`}
     >
       <div className="flex items-center gap-2 text-sm text-slate-700">
-        <Avatar name={receiver.displayName} size="md" />
+        <Avatar name={receiver.displayName} imageUrl={receiver.avatarUrl} size="md" />
         <span>
           Para <strong className="font-semibold text-slate-900">{receiver.displayName}</strong>
         </span>

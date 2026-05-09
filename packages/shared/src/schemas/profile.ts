@@ -7,6 +7,7 @@ export const profileSchema = z.object({
   displayName: displayNameSchema,
   eventId: z.string().uuid(),
   isAdmin: z.boolean(),
+  avatarUrl: z.string().url().nullable(),
 });
 
 export type Profile = z.infer<typeof profileSchema>;

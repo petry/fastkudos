@@ -32,8 +32,8 @@ const fb = (id: string, content: string, createdAt = new Date().toISOString()): 
 });
 
 const profiles = new Map<string, Profile>([
-  ['s', { id: 's', displayName: 'Ana', eventId: 'e', isAdmin: false }],
-  ['r', { id: 'r', displayName: 'Bruno', eventId: 'e', isAdmin: false }],
+  ['s', { id: 's', displayName: 'Ana', eventId: 'e', isAdmin: false, avatarUrl: null }],
+  ['r', { id: 'r', displayName: 'Bruno', eventId: 'e', isAdmin: false, avatarUrl: null }],
 ]);
 
 describe('<MuralFeed>', () => {

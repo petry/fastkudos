@@ -3,9 +3,9 @@ import type { Profile } from '@fastkudos/shared';
 import { filterParticipants } from './filter';
 
 const list: Profile[] = [
-  { id: '1', displayName: 'Alice', eventId: 'e', isAdmin: false },
-  { id: '2', displayName: 'Bob', eventId: 'e', isAdmin: false },
-  { id: '3', displayName: 'Alex', eventId: 'e', isAdmin: false },
+  { id: '1', displayName: 'Alice', eventId: 'e', isAdmin: false, avatarUrl: null },
+  { id: '2', displayName: 'Bob', eventId: 'e', isAdmin: false, avatarUrl: null },
+  { id: '3', displayName: 'Alex', eventId: 'e', isAdmin: false, avatarUrl: null },
 ];
 
 describe('filterParticipants', () => {

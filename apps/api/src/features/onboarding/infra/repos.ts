@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { Event, Profile } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
-import { events, profiles } from '../../../../drizzle/schema';
+import { events, profiles, users } from '../../../../drizzle/schema';
 import type { EventLookup, ProfileRepo } from '../domain/ports';
 
 export function eventLookup(db: Database): EventLookup {
@@ -22,21 +22,21 @@ export function profileRepo(db: Database): ProfileRepo {
         .insert(profiles)
         .values({ displayName, eventId })
         .returning();
-      return toProfile(inserted[0]!);
+      return toProfile(inserted[0]!, null);
     },
     async findOrCreateForUser({ userId, eventId, displayName }) {
-      const inserted = await db
+      await db
         .insert(profiles)
         .values({ userId, eventId, displayName })
-        .onConflictDoNothing({ target: [profiles.userId, profiles.eventId] })
-        .returning();
-      if (inserted[0]) return toProfile(inserted[0]);
-      const existing = await db
-        .select()
+        .onConflictDoNothing({ target: [profiles.userId, profiles.eventId] });
+      const rows = await db
+        .select({ profile: profiles, avatarUrl: users.avatarUrl })
         .from(profiles)
+        .leftJoin(users, eq(users.id, profiles.userId))
         .where(and(eq(profiles.userId, userId), eq(profiles.eventId, eventId)))
         .limit(1);
-      return toProfile(existing[0]!);
+      const row = rows[0]!;
+      return toProfile(row.profile, row.avatarUrl);
     },
   };
 }
@@ -51,11 +51,12 @@ function toEvent(row: typeof events.$inferSelect): Event {
   };
 }
 
-function toProfile(row: typeof profiles.$inferSelect): Profile {
+function toProfile(row: typeof profiles.$inferSelect, avatarUrl: string | null): Profile {
   return {
     id: row.id,
     displayName: row.displayName,
     eventId: row.eventId,
     isAdmin: row.isAdmin,
+    avatarUrl,
   };
 }

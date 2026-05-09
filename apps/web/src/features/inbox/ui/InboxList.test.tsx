@@ -14,8 +14,8 @@ const fb = (id: string, content: string, senderId = 's'): Feedback => ({
 });
 
 const profiles = new Map<string, Profile>([
-  ['s', { id: 's', displayName: 'Ana', eventId: 'e1', isAdmin: false }],
-  ['me', { id: 'me', displayName: 'Eu', eventId: 'e1', isAdmin: false }],
+  ['s', { id: 's', displayName: 'Ana', eventId: 'e1', isAdmin: false, avatarUrl: null }],
+  ['me', { id: 'me', displayName: 'Eu', eventId: 'e1', isAdmin: false, avatarUrl: null }],
 ]);
 
 describe('<InboxList>', () => {

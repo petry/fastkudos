@@ -3,8 +3,8 @@ import { expect, test, type Route } from '@playwright/test';
 // Os testes E2E mockam toda a API via page.route — não precisam de Worker/Neon
 // rodando. Cobrem o fluxo crítico do participante de ponta a ponta no browser.
 
-const PROFILE_ME = { id: 'p-me', displayName: 'Alice', eventId: 'e1', isAdmin: false };
-const PROFILE_BOB = { id: 'p-bob', displayName: 'Bob', eventId: 'e1', isAdmin: false };
+const PROFILE_ME = { id: 'p-me', displayName: 'Alice', eventId: 'e1', isAdmin: false, avatarUrl: null };
+const PROFILE_BOB = { id: 'p-bob', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null };
 
 function json(route: Route, status: number, body: unknown) {
   return route.fulfill({
@@ -87,7 +87,7 @@ test.describe('fluxo do participante', () => {
         'fastkudos:session:demo',
         JSON.stringify({
           token: 'cached-token',
-          profile: { id: 'p-me', displayName: 'Alice', eventId: 'e1', isAdmin: false },
+          profile: { id: 'p-me', displayName: 'Alice', eventId: 'e1', isAdmin: false, avatarUrl: null },
         }),
       );
     });

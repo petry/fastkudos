@@ -1,7 +1,7 @@
 import { desc, eq } from 'drizzle-orm';
 import type { Event, Feedback } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
-import { events, feedbacks, profiles } from '../../../../drizzle/schema';
+import { events, feedbacks, profiles, users } from '../../../../drizzle/schema';
 import type {
   EventRepo,
   FeedbackOwnership,
@@ -140,15 +140,17 @@ export function eventProfilesRepo(db: Database): EventProfilesRepo {
   return {
     async listByEvent(eventId) {
       const rows = await db
-        .select()
+        .select({ profile: profiles, avatarUrl: users.avatarUrl })
         .from(profiles)
+        .leftJoin(users, eq(users.id, profiles.userId))
         .where(eq(profiles.eventId, eventId))
         .orderBy(desc(profiles.createdAt));
       return rows.map((r) => ({
-        id: r.id,
-        displayName: r.displayName,
-        eventId: r.eventId,
-        isAdmin: r.isAdmin,
+        id: r.profile.id,
+        displayName: r.profile.displayName,
+        eventId: r.profile.eventId,
+        isAdmin: r.profile.isAdmin,
+        avatarUrl: r.avatarUrl,
       }));
     },
   };
