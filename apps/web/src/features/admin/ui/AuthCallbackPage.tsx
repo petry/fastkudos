@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import type { LoggedSessionStore, UserAuthGateway } from '../domain/ports';
+import { AuthShell } from './AuthShell';
 
 export interface AuthCallbackPageProps {
   session: LoggedSessionStore;
@@ -53,16 +55,31 @@ export function AuthCallbackPage({ session, auth }: AuthCallbackPageProps) {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-md p-6">
-        <p role="alert" className="text-sm text-red-600">
-          {error}
+      <AuthShell>
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
         </p>
-      </main>
+        <Link
+          to="/login"
+          className="mt-4 inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-slate-700"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          Voltar ao login
+        </Link>
+      </AuthShell>
     );
   }
+
   return (
-    <main className="mx-auto max-w-md p-6">
-      <p className="text-slate-600">Concluindo login…</p>
-    </main>
+    <AuthShell>
+      <div className="flex flex-col items-center gap-3 py-4 text-center">
+        <Loader2 className="h-6 w-6 animate-spin text-sky-500" aria-hidden="true" />
+        <p className="text-sm text-slate-600">Concluindo login…</p>
+      </div>
+    </AuthShell>
   );
 }

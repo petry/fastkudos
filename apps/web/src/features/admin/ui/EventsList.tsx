@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  AlertCircle,
+  CalendarDays,
+  Eye,
+  Inbox,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 import { slugSchema, type Event } from '@fastkudos/shared';
 import type { OwnedEventsGateway } from '../domain/ports';
 
@@ -7,6 +15,9 @@ export interface EventsListProps {
   token: string;
   gateway: OwnedEventsGateway;
 }
+
+const INPUT_CLASS =
+  'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100';
 
 export function EventsList({ token, gateway }: EventsListProps) {
   const [items, setItems] = useState<Event[] | null>(null);
@@ -55,15 +66,67 @@ export function EventsList({ token, gateway }: EventsListProps) {
     }
   }
 
-  if (error) return <p role="alert" className="text-red-600">{error}</p>;
-  if (!items) return <p>Carregando eventos…</p>;
-  if (items.length === 0) return <p className="text-slate-500">Nenhum evento criado ainda.</p>;
+  if (error) {
+    return (
+      <p
+        role="alert"
+        className="flex items-start gap-2 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700"
+      >
+        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <span>{error}</span>
+      </p>
+    );
+  }
+
+  if (!items) {
+    return (
+      <ul
+        aria-label="Carregando eventos"
+        className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-kudo"
+      >
+        {[0, 1, 2].map((i) => (
+          <li key={i} className="flex items-center gap-3 px-4 py-4 sm:px-5">
+            <span className="h-8 w-8 animate-pulse rounded-full bg-slate-100" />
+            <div className="flex-1 space-y-2">
+              <span className="block h-4 w-32 animate-pulse rounded bg-slate-100" />
+              <span className="block h-3 w-20 animate-pulse rounded bg-slate-100" />
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="rounded-2xl border border-slate-100 bg-white p-8 text-center shadow-kudo">
+        <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-rose-500 text-white shadow-sm">
+          <Inbox className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <p className="mt-4 text-base font-semibold text-slate-900">
+          Nenhum evento criado ainda.
+        </p>
+        <p className="mt-1 text-sm text-slate-500">
+          Use o formulário acima para criar seu primeiro mural de kudos.
+        </p>
+        <a
+          href="#novo-evento"
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-rose-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-sky-600 hover:to-rose-600"
+        >
+          Criar agora
+        </a>
+      </div>
+    );
+  }
 
   return (
-    <ul className="divide-y divide-slate-200" data-testid="admin-events">
+    <ul
+      data-testid="admin-events"
+      className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-kudo"
+    >
       {items.map((e) =>
         editingId === e.id ? (
-          <li key={e.id} className="py-3">
+          <li key={e.id} className="px-4 py-4 sm:px-5">
             <EditEventRow
               initial={{ name: e.name, slug: e.slug }}
               onCancel={() => setEditingId(null)}
@@ -71,29 +134,49 @@ export function EventsList({ token, gateway }: EventsListProps) {
             />
           </li>
         ) : (
-          <li key={e.id} className="flex items-center justify-between gap-2 py-2">
-            <span className="min-w-0 truncate">
-              {e.name} <code className="text-xs text-slate-500">/e/{e.slug}</code>
+          <li
+            key={e.id}
+            className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50/60 sm:px-5"
+          >
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-rose-500 text-white shadow-sm">
+              <CalendarDays className="h-4 w-4" aria-hidden="true" />
             </span>
-            <span className="flex shrink-0 gap-3 text-sm">
-              <Link to={`/dashboard/events/${e.id}`} className="text-sky-700 underline">
-                Moderar
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-900">{e.name}</p>
+              <p className="mt-0.5 text-xs">
+                <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
+                  /e/{e.slug}
+                </code>
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <Link
+                to={`/dashboard/events/${e.id}`}
+                aria-label="Moderar"
+                title="Moderar evento"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+              >
+                <Eye className="h-4 w-4" aria-hidden="true" />
               </Link>
               <button
                 type="button"
                 onClick={() => setEditingId(e.id)}
-                className="text-slate-700 underline"
+                aria-label="Editar"
+                title="Editar evento"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
               >
-                Editar
+                <Pencil className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(e.id, e.name)}
-                className="text-red-600 underline"
+                aria-label="Apagar"
+                title="Apagar evento"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
               >
-                Apagar
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </button>
-            </span>
+            </div>
           </li>
         ),
       )}
@@ -134,46 +217,50 @@ function EditEventRow({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2" aria-label="Editar evento">
+    <form onSubmit={handleSubmit} className="space-y-3" aria-label="Editar evento">
       <label className="block">
-        <span className="text-xs text-slate-600">Nome</span>
+        <span className="text-xs font-medium text-slate-600">Nome</span>
         <input
           aria-label="Nome do evento"
           value={name}
           onChange={(ev) => setName(ev.target.value)}
           required
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+          className={INPUT_CLASS}
         />
       </label>
       <label className="block">
-        <span className="text-xs text-slate-600">Slug</span>
+        <span className="text-xs font-medium text-slate-600">Slug</span>
         <input
           aria-label="Slug"
           value={slug}
           onChange={(ev) => setSlug(ev.target.value)}
           required
-          className="mt-1 w-full rounded border border-slate-300 px-2 py-1 font-mono"
+          className={`${INPUT_CLASS} font-mono`}
         />
       </label>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="submit"
           disabled={busy}
-          className="rounded bg-sky-600 px-3 py-1 text-sm font-medium text-white disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-500 to-rose-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:from-sky-600 hover:to-rose-600 disabled:opacity-50"
         >
           {busy ? 'Salvando…' : 'Salvar'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded border border-slate-300 px-3 py-1 text-sm"
+          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
           Cancelar
         </button>
       </div>
       {error && (
-        <p role="alert" className="text-sm text-red-600">
-          {error}
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl border border-rose-100 bg-rose-50 p-2 text-sm text-rose-700"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
         </p>
       )}
     </form>
