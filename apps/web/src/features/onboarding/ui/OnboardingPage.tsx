@@ -8,13 +8,14 @@ import { signOutFromEvent } from '../application/sign-out';
 import type { AuthGateway, SessionStore } from '../domain/ports';
 import type { LoggedSessionStore, UserAuthGateway } from '../../admin/domain/ports';
 import { ParticipantsList } from '../../participants/ui/ParticipantsList';
-import type { EventSummary, ParticipantsGateway } from '../../participants/domain/ports';
+import type { ParticipantsGateway } from '../../participants/domain/ports';
 import type { KudosGateway } from '../../kudos/domain/ports';
 import { MuralFeed } from '../../mural/ui/MuralFeed';
 import type { EventStream, MuralGateway } from '../../mural/domain/ports';
 import { useKudoToasts } from '../../mural/ui/useKudoToasts';
 import { CollapsibleSection } from '../../../components/ui/CollapsibleSection';
 import { EventShell } from './EventShell';
+import { useAsyncData } from '../../../lib/use-async-data';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
@@ -226,27 +227,14 @@ function JoinedView({
   joined: { token: string; profile: Profile };
   onLeave: () => void;
 } & OnboardingPageProps) {
-  const [profiles, setProfiles] = useState<Profile[] | null>(null);
-  const [event, setEvent] = useState<EventSummary | null>(null);
-  const [profilesError, setProfilesError] = useState<string | null>(null);
   const [loggedIn] = useState(() => !!userSession?.load());
 
-  useEffect(() => {
-    let cancelled = false;
-    participants
-      .list({ slug, token: joined.token })
-      .then((data) => {
-        if (cancelled) return;
-        setProfiles(data.profiles);
-        setEvent(data.event);
-      })
-      .catch((e) => {
-        if (!cancelled) setProfilesError(e instanceof Error ? e.message : 'erro');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, joined.token, participants]);
+  const { data: participantsData, error: profilesError } = useAsyncData(
+    () => participants.list({ slug, token: joined.token }),
+    [slug, joined.token, participants],
+  );
+  const profiles = participantsData?.profiles ?? null;
+  const event = participantsData?.event ?? null;
 
   useKudoToasts({
     slug,

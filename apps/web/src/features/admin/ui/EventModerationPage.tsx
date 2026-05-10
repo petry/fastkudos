@@ -1,18 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, Inbox, MessageCircle, Trash2, Users } from 'lucide-react';
-import type { Feedback, Profile } from '@fastkudos/shared';
+import type { Profile } from '@fastkudos/shared';
 import type { LoggedSessionStore, OwnedEventsGateway } from '../domain/ports';
 import type { SessionStore } from '../../onboarding/domain/ports';
 import { signOutFromEvent } from '../../onboarding/application/sign-out';
-import type {
-  EventSummary,
-  ParticipantsGateway,
-} from '../../participants/domain/ports';
+import type { ParticipantsGateway } from '../../participants/domain/ports';
 import { EventShell } from '../../onboarding/ui/EventShell';
 import { Avatar } from '../../../components/ui/Avatar';
 import { KudoCard } from '../../../components/ui/KudoCard';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { useAsyncData } from '../../../lib/use-async-data';
 
 export interface EventModerationPageProps {
   session: SessionStore;
@@ -31,7 +29,6 @@ export function EventModerationPage({
   const navigate = useNavigate();
   const [joined] = useState(() => session.load(slug));
   const [logged] = useState(() => userSession.load());
-  const [event, setEvent] = useState<EventSummary | null>(null);
 
   useEffect(() => {
     if (!joined || !joined.profile.isAdmin) {
@@ -43,21 +40,11 @@ export function EventModerationPage({
     }
   }, [joined, logged, navigate, slug]);
 
-  useEffect(() => {
-    if (!joined) return;
-    let cancelled = false;
-    participants
-      .list({ slug, token: joined.token })
-      .then((data) => {
-        if (!cancelled) setEvent(data.event);
-      })
-      .catch(() => {
-        /* TopBar tolera evento ausente */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [participants, slug, joined]);
+  const { data: participantsData } = useAsyncData(
+    () => (joined ? participants.list({ slug, token: joined.token }) : Promise.resolve(null)),
+    [participants, slug, joined],
+  );
+  const event = participantsData?.event ?? null;
 
   if (!joined || !joined.profile.isAdmin || !logged) return null;
 
@@ -112,29 +99,20 @@ function FeedbacksSection({
   eventId: string;
   gateway: OwnedEventsGateway;
 }) {
-  const [items, setItems] = useState<Feedback[] | null>(null);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error: loadError, setData } = useAsyncData(
+    () =>
+      Promise.all([
+        gateway.feedbacks({ token, eventId }),
+        gateway.profiles({ token, eventId }),
+      ]).then(([fbs, pfs]) => ({ items: fbs, profiles: pfs })),
+    [token, eventId, gateway],
+  );
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      gateway.feedbacks({ token, eventId }),
-      gateway.profiles({ token, eventId }),
-    ])
-      .then(([fbs, pfs]) => {
-        if (cancelled) return;
-        setItems(fbs);
-        setProfiles(pfs);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'erro');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, eventId, gateway]);
+  const items = data?.items ?? null;
+  const profiles = data?.profiles ?? [];
+  const error = loadError ?? mutationError;
 
   const profilesById = useMemo(() => {
     const m = new Map<string, Profile>();
@@ -146,9 +124,11 @@ function FeedbacksSection({
     setBusyId(feedbackId);
     try {
       await gateway.deleteFeedback({ token, feedbackId });
-      setItems((prev) => (prev ? prev.filter((f) => f.id !== feedbackId) : prev));
+      setData((prev) =>
+        prev ? { ...prev, items: prev.items.filter((f) => f.id !== feedbackId) } : prev,
+      );
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'erro');
+      setMutationError(e instanceof Error ? e.message : 'erro');
     } finally {
       setBusyId(null);
     }
@@ -215,24 +195,13 @@ function ProfilesSection({
   eventId: string;
   gateway: OwnedEventsGateway;
 }) {
-  const [items, setItems] = useState<Profile[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: items, error: loadError, setData: setItems } = useAsyncData(
+    () => gateway.profiles({ token, eventId }),
+    [token, eventId, gateway],
+  );
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    gateway
-      .profiles({ token, eventId })
-      .then((items) => {
-        if (!cancelled) setItems(items);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'erro');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, eventId, gateway]);
+  const error = loadError ?? mutationError;
 
   async function handleDelete(profileId: string) {
     setBusyId(profileId);
@@ -240,7 +209,7 @@ function ProfilesSection({
       await gateway.deleteProfile({ token, profileId });
       setItems((prev) => (prev ? prev.filter((p) => p.id !== profileId) : prev));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'erro');
+      setMutationError(e instanceof Error ? e.message : 'erro');
     } finally {
       setBusyId(null);
     }

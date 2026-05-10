@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
@@ -9,8 +9,9 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { slugSchema, type Event } from '@fastkudos/shared';
+import { slugSchema } from '@fastkudos/shared';
 import type { OwnedEventsGateway } from '../domain/ports';
+import { useAsyncData } from '../../../lib/use-async-data';
 
 export interface EventsListProps {
   token: string;
@@ -21,24 +22,12 @@ const INPUT_CLASS =
   'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100';
 
 export function EventsList({ token, gateway }: EventsListProps) {
-  const [items, setItems] = useState<Event[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: items, error, setData: setItems } = useAsyncData(
+    () => gateway.list({ token }),
+    [token, gateway],
+  );
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    gateway
-      .list({ token })
-      .then((events) => {
-        if (!cancelled) setItems(events);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'erro');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, gateway]);
 
   async function handleDelete(eventId: string, name: string) {
     const confirmed = window.confirm(
@@ -49,7 +38,7 @@ export function EventsList({ token, gateway }: EventsListProps) {
       await gateway.delete({ token, eventId });
       setItems((prev) => (prev ? prev.filter((e) => e.id !== eventId) : prev));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'erro');
+      setMutationError(e instanceof Error ? e.message : 'erro');
     }
   }
 
@@ -67,14 +56,16 @@ export function EventsList({ token, gateway }: EventsListProps) {
     }
   }
 
-  if (error) {
+  const displayError = error ?? mutationError;
+
+  if (displayError) {
     return (
       <p
         role="alert"
         className="flex items-start gap-2 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-700"
       >
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        <span>{error}</span>
+        <span>{displayError}</span>
       </p>
     );
   }

@@ -5,11 +5,12 @@ import type { Profile } from '@fastkudos/shared';
 import type { SessionStore } from '../../onboarding/domain/ports';
 import type { LoggedSessionStore } from '../../admin/domain/ports';
 import { signOutFromEvent } from '../../onboarding/application/sign-out';
-import type { EventSummary, ParticipantsGateway } from '../../participants/domain/ports';
+import type { ParticipantsGateway } from '../../participants/domain/ports';
 import type { InboxGateway } from '../domain/ports';
 import { InboxList } from './InboxList';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import { EventShell } from '../../onboarding/ui/EventShell';
+import { useAsyncData } from '../../../lib/use-async-data';
 
 export interface InboxPageProps {
   session: SessionStore;
@@ -23,37 +24,25 @@ export function InboxPage({ session, userSession, participants, inbox }: InboxPa
   const navigate = useNavigate();
   const [joined] = useState(() => session.load(slug));
   const [loggedIn] = useState(() => !!userSession?.load());
-  const [profiles, setProfiles] = useState<Profile[] | null>(null);
-  const [event, setEvent] = useState<EventSummary | null>(null);
+  const token = joined?.token ?? '';
 
   useEffect(() => {
     if (!joined) navigate(`/e/${slug}`, { replace: true });
   }, [joined, navigate, slug]);
 
-  useEffect(() => {
-    if (!joined) return;
-    let cancelled = false;
-    participants
-      .list({ slug, token: joined.token })
-      .then((data) => {
-        if (cancelled) return;
-        setProfiles(data.profiles);
-        setEvent(data.event);
-      })
-      .catch(() => {
-        /* não-bloqueante: nomes caem para fallback no card */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, joined, participants]);
+  const { data: participantsData } = useAsyncData(
+    () => (joined ? participants.list({ slug, token }) : Promise.resolve(null)),
+    [slug, joined, participants, token],
+  );
 
   const profilesById = useMemo(() => {
     const map = new Map<string, Profile>();
-    if (profiles) for (const p of profiles) map.set(p.id, p);
+    if (participantsData) for (const p of participantsData.profiles) map.set(p.id, p);
     if (joined) map.set(joined.profile.id, joined.profile);
     return map;
-  }, [profiles, joined]);
+  }, [participantsData, joined]);
+
+  const event = participantsData?.event ?? null;
 
   if (!joined) return null;
 

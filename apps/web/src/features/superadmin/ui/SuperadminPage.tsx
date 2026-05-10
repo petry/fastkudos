@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import type { Event } from '@fastkudos/shared';
 import type { LoggedSessionStore } from '../../admin/domain/ports';
 import type { SuperadminGateway, SuperadminUser } from '../domain/ports';
+import { useAsyncData } from '../../../lib/use-async-data';
 
 export interface SuperadminPageProps {
   session: LoggedSessionStore;
@@ -11,41 +11,38 @@ export interface SuperadminPageProps {
 
 export function SuperadminPage({ session, gateway }: SuperadminPageProps) {
   const [current] = useState(() => session.load());
-  const [events, setEvents] = useState<Event[] | null>(null);
-  const [users, setUsers] = useState<SuperadminUser[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const token = current?.token ?? '';
 
-  useEffect(() => {
-    if (!current) return;
-    let cancelled = false;
-    Promise.all([
-      gateway.listEvents({ token: current.token }),
-      gateway.listUsers({ token: current.token }),
-    ])
-      .then(([e, u]) => {
-        if (cancelled) return;
-        setEvents(e);
-        setUsers(u);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'erro');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [current, gateway]);
+  const { data, error: loadError, setData } = useAsyncData(
+    () =>
+      current
+        ? Promise.all([
+            gateway.listEvents({ token }),
+            gateway.listUsers({ token }),
+          ]).then(([events, users]) => ({ events, users }))
+        : Promise.resolve(null),
+    [current, gateway, token],
+  );
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
   if (!current) return <Navigate to="/login" replace />;
   if (current.user.role !== 'superadmin') return <Navigate to="/dashboard" replace />;
+
+  const events = data?.events ?? null;
+  const users = data?.users ?? null;
+  const error = loadError ?? mutationError;
 
   async function toggleRole(u: SuperadminUser) {
     if (!current) return;
     const next = u.role === 'superadmin' ? 'user' : 'superadmin';
     try {
       const updated = await gateway.updateUserRole({ token: current.token, userId: u.id, role: next });
-      setUsers((prev) => (prev ? prev.map((x) => (x.id === u.id ? updated : x)) : prev));
+      setData((prev) =>
+        prev ? { ...prev, users: prev.users.map((x) => (x.id === u.id ? updated : x)) } : prev,
+      );
+      setMutationError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'erro');
+      setMutationError(e instanceof Error ? e.message : 'erro');
     }
   }
 
