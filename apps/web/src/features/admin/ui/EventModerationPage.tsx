@@ -4,6 +4,7 @@ import { AlertCircle, Inbox, MessageCircle, Trash2, Users } from 'lucide-react';
 import type { Feedback, Profile } from '@fastkudos/shared';
 import type { LoggedSessionStore, OwnedEventsGateway } from '../domain/ports';
 import type { SessionStore } from '../../onboarding/domain/ports';
+import { signOutFromEvent } from '../../onboarding/application/sign-out';
 import type {
   EventSummary,
   ParticipantsGateway,
@@ -28,7 +29,7 @@ export function EventModerationPage({
 }: EventModerationPageProps) {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
-  const [joined, setJoined] = useState(() => session.load(slug));
+  const [joined] = useState(() => session.load(slug));
   const [logged] = useState(() => userSession.load());
   const [event, setEvent] = useState<EventSummary | null>(null);
 
@@ -62,9 +63,8 @@ export function EventModerationPage({
 
   function handleLeave() {
     if (!joined) return;
-    session.save?.(slug, null as unknown as { token: string; profile: Profile });
-    setJoined(null);
-    navigate(`/e/${slug}`);
+    signOutFromEvent({ session, userSession }, slug);
+    navigate('/');
   }
 
   return (

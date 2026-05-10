@@ -9,4 +9,5 @@ export interface AuthGateway {
 export interface SessionStore {
   save(slug: string, session: { token: string; profile: Profile }): void;
   load(slug: string): { token: string; profile: Profile } | null;
+  clear(slug: string): void;
 }

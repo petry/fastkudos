@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowRight, Sparkles, Users } from 'lucide-react';
 import type { Profile } from '@fastkudos/shared';
 import { joinEvent, joinEventAsUser } from '../application/join-event';
+import { signOutFromEvent } from '../application/sign-out';
 import type { AuthGateway, SessionStore } from '../domain/ports';
 import type { LoggedSessionStore, UserAuthGateway } from '../../admin/domain/ports';
 import { ParticipantsList } from '../../participants/ui/ParticipantsList';
@@ -33,6 +34,7 @@ export interface OnboardingPageProps {
 
 export function OnboardingPage(props: OnboardingPageProps) {
   const { slug = '' } = useParams();
+  const navigate = useNavigate();
   const [joined, setJoined] = useState<{ token: string; profile: Profile } | null>(
     () => props.session.load(slug),
   );
@@ -66,8 +68,8 @@ export function OnboardingPage(props: OnboardingPageProps) {
         slug={slug}
         joined={joined}
         onLeave={() => {
-          props.session.save?.(slug, null as unknown as { token: string; profile: Profile });
-          setJoined(null);
+          signOutFromEvent({ session: props.session, userSession: props.userSession }, slug);
+          navigate('/');
         }}
         {...props}
       />

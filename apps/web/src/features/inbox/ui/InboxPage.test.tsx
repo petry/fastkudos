@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import type { Feedback, Profile } from '@fastkudos/shared';
 import { InboxPage } from './InboxPage';
 import type { SessionStore } from '../../onboarding/domain/ports';
+import type { LoggedSessionStore } from '../../admin/domain/ports';
 import type { ParticipantsGateway } from '../../participants/domain/ports';
 import type { InboxGateway } from '../domain/ports';
 
@@ -18,6 +19,12 @@ function setup(opts: {
   const session: SessionStore = {
     save: vi.fn(),
     load: vi.fn(() => opts.cached ?? null),
+    clear: vi.fn(),
+  };
+  const userSession: LoggedSessionStore = {
+    save: vi.fn(),
+    load: vi.fn(() => null),
+    clear: vi.fn(),
   };
   const participants: ParticipantsGateway = {
     list: vi.fn(async () => ({
@@ -33,13 +40,21 @@ function setup(opts: {
       <Routes>
         <Route
           path="/e/:slug/inbox"
-          element={<InboxPage session={session} participants={participants} inbox={inbox} />}
+          element={
+            <InboxPage
+              session={session}
+              userSession={userSession}
+              participants={participants}
+              inbox={inbox}
+            />
+          }
         />
         <Route path="/e/:slug" element={<div data-testid="event-home" />} />
+        <Route path="/" element={<div data-testid="home-page" />} />
       </Routes>
     </MemoryRouter>,
   );
-  return { session, participants, inbox };
+  return { session, userSession, participants, inbox };
 }
 
 const fb = (id: string, content: string): Feedback => ({
@@ -77,12 +92,13 @@ describe('<InboxPage>', () => {
     await waitFor(() => expect(screen.getByTestId('event-home')).toBeInTheDocument());
   });
 
-  it('Sair limpa a sessão e volta para /e/:slug', async () => {
+  it('Sair limpa a sessão do evento e a Google e leva para /', async () => {
     const user = userEvent.setup();
-    const { session } = setup({ cached: { token: 't', profile: me } });
+    const { session, userSession } = setup({ cached: { token: 't', profile: me } });
     const leave = await screen.findByRole('button', { name: /sair/i });
     await user.click(leave);
-    expect(session.save).toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByTestId('event-home')).toBeInTheDocument());
+    expect(session.clear).toHaveBeenCalledWith('demo');
+    expect(userSession.clear).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByTestId('home-page')).toBeInTheDocument());
   });
 });

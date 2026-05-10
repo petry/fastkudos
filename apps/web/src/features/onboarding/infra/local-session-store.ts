@@ -42,5 +42,8 @@ export function localSessionStore(storage: Storage = safeStorage()): SessionStor
         return null;
       }
     },
+    clear(slug) {
+      storage.removeItem(KEY_PREFIX + slug);
+    },
   };
 }

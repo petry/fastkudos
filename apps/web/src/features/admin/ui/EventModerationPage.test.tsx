@@ -50,6 +50,7 @@ function setup(opts: SetupOpts = {}) {
   const session: SessionStore = {
     save: vi.fn(),
     load: vi.fn(() => cached),
+    clear: vi.fn(),
   };
   const userSession: LoggedSessionStore = {
     save: vi.fn(),
@@ -105,6 +106,7 @@ function setup(opts: SetupOpts = {}) {
         />
         <Route path="/e/:slug" element={<div data-testid="event-home" />} />
         <Route path="/login" element={<div data-testid="login-page" />} />
+        <Route path="/" element={<div data-testid="home-page" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -165,12 +167,13 @@ describe('<EventModerationPage>', () => {
     await waitFor(() => expect(screen.queryByText('Bob')).not.toBeInTheDocument());
   });
 
-  it('Sair limpa a sessão de participante e volta para /e/:slug', async () => {
+  it('Sair limpa a sessão de participante e a Google e leva para /', async () => {
     const user = userEvent.setup();
-    const { session } = setup();
+    const { session, userSession } = setup();
     const leave = await screen.findByRole('button', { name: /^sair$/i });
     await user.click(leave);
-    expect(session.save).toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByTestId('event-home')).toBeInTheDocument());
+    expect(session.clear).toHaveBeenCalledWith('demo');
+    expect(userSession.clear).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByTestId('home-page')).toBeInTheDocument());
   });
 });

@@ -21,6 +21,7 @@ function setup(opts: SetupOptions = {}) {
   const session: SessionStore = {
     save: vi.fn(),
     load: vi.fn(() => opts.cached ?? null),
+    clear: vi.fn(),
   };
   const auth: AuthGateway = {
     registerAnon: vi.fn(async ({ displayName }) => ({
@@ -65,6 +66,7 @@ function setup(opts: SetupOptions = {}) {
             />
           }
         />
+        <Route path="/" element={<div data-testid="home-page" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -194,5 +196,23 @@ describe('<OnboardingPage> user logado', () => {
     });
     await screen.findByText('Demo');
     expect(screen.getByTestId('welcome')).toHaveTextContent('Anônimo');
+  });
+
+  it('Sair limpa a sessão do evento e a sessão Google e leva para /', async () => {
+    const user = userEvent.setup();
+    const { session, userSession, auth } = setup({
+      loggedUser: loggedAlice,
+      cached: {
+        token: 't-anon',
+        profile: { id: 'p-anon', displayName: 'Anônimo', eventId: 'e1', isAdmin: false, avatarUrl: null },
+      },
+    });
+    await screen.findByText('Demo');
+    const leave = await screen.findByRole('button', { name: /^sair$/i });
+    await user.click(leave);
+    expect(session.clear).toHaveBeenCalledWith('demo');
+    expect(userSession.clear).toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByTestId('home-page')).toBeInTheDocument());
+    expect(auth.eventJoin).not.toHaveBeenCalled();
   });
 });

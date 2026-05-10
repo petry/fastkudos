@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import type { Profile } from '@fastkudos/shared';
 import type { SessionStore } from '../../onboarding/domain/ports';
+import type { LoggedSessionStore } from '../../admin/domain/ports';
+import { signOutFromEvent } from '../../onboarding/application/sign-out';
 import type { EventSummary, ParticipantsGateway } from '../../participants/domain/ports';
 import type { InboxGateway } from '../domain/ports';
 import { InboxList } from './InboxList';
@@ -11,14 +13,15 @@ import { EventShell } from '../../onboarding/ui/EventShell';
 
 export interface InboxPageProps {
   session: SessionStore;
+  userSession?: LoggedSessionStore;
   participants: ParticipantsGateway;
   inbox: InboxGateway;
 }
 
-export function InboxPage({ session, participants, inbox }: InboxPageProps) {
+export function InboxPage({ session, userSession, participants, inbox }: InboxPageProps) {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
-  const [joined, setJoined] = useState(() => session.load(slug));
+  const [joined] = useState(() => session.load(slug));
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [event, setEvent] = useState<EventSummary | null>(null);
 
@@ -55,9 +58,8 @@ export function InboxPage({ session, participants, inbox }: InboxPageProps) {
 
   function handleLeave() {
     if (!joined) return;
-    session.save?.(slug, null as unknown as { token: string; profile: Profile });
-    setJoined(null);
-    navigate(`/e/${slug}`);
+    signOutFromEvent({ session, userSession }, slug);
+    navigate('/');
   }
 
   return (

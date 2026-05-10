@@ -21,6 +21,9 @@ function makeDeps(loadResult: { token: string; profile: Profile } | null = null)
       store[slug] = s;
     }),
     load: vi.fn(() => loadResult),
+    clear: vi.fn((slug: string) => {
+      delete store[slug];
+    }),
   };
   const auth: AuthGateway = {
     registerAnon: vi.fn(async ({ displayName }) => ({

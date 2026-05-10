@@ -55,7 +55,14 @@ export function App() {
       />
       <Route
         path="/e/:slug/inbox"
-        element={<InboxPage session={session} participants={participants} inbox={inbox} />}
+        element={
+          <InboxPage
+            session={session}
+            userSession={userSession}
+            participants={participants}
+            inbox={inbox}
+          />
+        }
       />
       <Route
         path="/e/:slug/moderate"
