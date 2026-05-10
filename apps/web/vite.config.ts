@@ -7,6 +7,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        navigateFallbackDenylist: [/^\/auth\/callback/, /^\/login/],
+      },
       includeAssets: [
         'favicon.ico',
         'favicon.svg',
