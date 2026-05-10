@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import logoMark from '../../assets/brand/logo-mark.svg';
 
 export interface TopBarProps {
   rightSlot: ReactNode;
@@ -14,9 +14,7 @@ export function TopBar({ rightSlot }: TopBarProps) {
           to="/"
           className="inline-flex items-center gap-2 font-bold tracking-tight text-slate-900 transition hover:text-slate-700"
         >
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-rose-500 text-white shadow-sm">
-            <Sparkles className="h-4 w-4" aria-hidden="true" />
-          </span>
+          <img src={logoMark} alt="" aria-hidden="true" className="h-8 w-8" />
           FastKudos
         </Link>
 

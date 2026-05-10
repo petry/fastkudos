@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 100" width="760" height="200">
+<defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#F43F5E"/></linearGradient><symbol id="mark" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="url(#g)"/><path d="M50 3L66 34L97 50L66 66L50 97L34 66L3 50L34 34Z" fill="#FFFFFF"/></symbol></defs>
+<use href="#mark" x="0" y="10" width="80" height="80"/>
+<text x="100" y="68" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' font-size="44" font-weight="700" letter-spacing="-1.5" fill="#FFFFFF">FastKudos</text>
+</svg>
