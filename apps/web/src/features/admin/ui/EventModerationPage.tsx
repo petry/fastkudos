@@ -1,60 +1,87 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
-import {
-  AlertCircle,
-  ArrowLeft,
-  Inbox,
-  MessageCircle,
-  Trash2,
-  Users,
-} from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AlertCircle, Inbox, MessageCircle, Trash2, Users } from 'lucide-react';
 import type { Feedback, Profile } from '@fastkudos/shared';
 import type { LoggedSessionStore, OwnedEventsGateway } from '../domain/ports';
-import { AppShell } from './AppShell';
+import type { SessionStore } from '../../onboarding/domain/ports';
+import type {
+  EventSummary,
+  ParticipantsGateway,
+} from '../../participants/domain/ports';
+import { EventShell } from '../../onboarding/ui/EventShell';
 import { Avatar } from '../../../components/ui/Avatar';
 import { KudoCard } from '../../../components/ui/KudoCard';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 
-export interface ModerationPageProps {
-  session: LoggedSessionStore;
+export interface EventModerationPageProps {
+  session: SessionStore;
+  userSession: LoggedSessionStore;
+  participants: ParticipantsGateway;
   gateway: OwnedEventsGateway;
 }
 
-export function ModerationPage({ session, gateway }: ModerationPageProps) {
-  // Carrega a sessão uma única vez. Repetir session.load() a cada render geraria
-  // novas referências e re-disparava os useEffect, recarregando após delete.
-  const [current] = useState(() => session.load());
-  const { id = '' } = useParams();
+export function EventModerationPage({
+  session,
+  userSession,
+  participants,
+  gateway,
+}: EventModerationPageProps) {
+  const { slug = '' } = useParams();
+  const navigate = useNavigate();
+  const [joined, setJoined] = useState(() => session.load(slug));
+  const [logged] = useState(() => userSession.load());
+  const [event, setEvent] = useState<EventSummary | null>(null);
 
-  if (!current) return <Navigate to="/login" replace />;
+  useEffect(() => {
+    if (!joined || !joined.profile.isAdmin) {
+      navigate(`/e/${slug}`, { replace: true });
+      return;
+    }
+    if (!logged) {
+      navigate('/login', { replace: true });
+    }
+  }, [joined, logged, navigate, slug]);
 
-  function handleSignOut() {
-    session.clear();
-    window.location.assign('/login');
+  useEffect(() => {
+    if (!joined) return;
+    let cancelled = false;
+    participants
+      .list({ slug, token: joined.token })
+      .then((data) => {
+        if (!cancelled) setEvent(data.event);
+      })
+      .catch(() => {
+        /* TopBar tolera evento ausente */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [participants, slug, joined]);
+
+  if (!joined || !joined.profile.isAdmin || !logged) return null;
+
+  function handleLeave() {
+    if (!joined) return;
+    session.save?.(slug, null as unknown as { token: string; profile: Profile });
+    setJoined(null);
+    navigate(`/e/${slug}`);
   }
 
   return (
-    <AppShell current={current.user} onSignOut={handleSignOut} width="3xl">
-      <Link
-        to="/dashboard"
-        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-        Voltar
-      </Link>
-      <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">Moderação</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Modere feedbacks e participantes deste evento.
-      </p>
-
-      <section className="mt-8">
-        <FeedbacksSection token={current.token} eventId={id} gateway={gateway} />
-      </section>
-
-      <section className="mt-10">
-        <ProfilesSection token={current.token} eventId={id} gateway={gateway} />
-      </section>
-    </AppShell>
+    <EventShell slug={slug} profile={joined.profile} event={event} onSignOut={handleLeave}>
+      <div className="mx-auto max-w-2xl space-y-10">
+        <FeedbacksSection
+          token={logged.token}
+          eventId={joined.profile.eventId}
+          gateway={gateway}
+        />
+        <ProfilesSection
+          token={logged.token}
+          eventId={joined.profile.eventId}
+          gateway={gateway}
+        />
+      </div>
+    </EventShell>
   );
 }
 
@@ -122,12 +149,8 @@ function FeedbacksSection({
   }
 
   return (
-    <>
-      <SectionHeader
-        title="Feedbacks"
-        icon={MessageCircle}
-        count={items?.length}
-      />
+    <section>
+      <SectionHeader title="Feedbacks" icon={MessageCircle} count={items?.length} />
       {error ? (
         <ErrorBlock message={error} />
       ) : !items ? (
@@ -173,7 +196,7 @@ function FeedbacksSection({
           ))}
         </ul>
       )}
-    </>
+    </section>
   );
 }
 
@@ -218,7 +241,7 @@ function ProfilesSection({
   }
 
   return (
-    <>
+    <section>
       <SectionHeader title="Participantes" icon={Users} count={items?.length} />
       {error ? (
         <ErrorBlock message={error} />
@@ -281,6 +304,6 @@ function ProfilesSection({
           ))}
         </ul>
       )}
-    </>
+    </section>
   );
 }

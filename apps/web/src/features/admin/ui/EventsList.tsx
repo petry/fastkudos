@@ -157,7 +157,7 @@ export function EventsList({ token, gateway }: EventsListProps) {
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <Link
-                to={`/dashboard/events/${e.id}`}
+                to={`/e/${e.slug}/moderate`}
                 aria-label="Moderar"
                 title="Moderar evento"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"

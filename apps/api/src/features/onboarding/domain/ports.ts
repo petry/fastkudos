@@ -8,12 +8,14 @@ export interface ProfileRepo {
   create(input: { displayName: string; eventId: string }): Promise<Profile>;
   /**
    * Idempotente para users logados — se já existe profile com (userId, eventId),
-   * retorna o existente sem alterar display_name.
+   * retorna o existente sem alterar display_name. O flag isAdmin é sincronizado
+   * a cada chamada, refletindo a posse atual do evento (owner ↔ admin).
    */
   findOrCreateForUser(input: {
     userId: string;
     eventId: string;
     displayName: string;
+    isAdmin: boolean;
   }): Promise<Profile>;
 }
 

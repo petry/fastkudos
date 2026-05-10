@@ -32,7 +32,7 @@ describe('<EventsList>', () => {
     );
     await waitFor(() => screen.getByText('Demo'));
     const link = screen.getByRole('link', { name: /moderar/i });
-    expect(link).toHaveAttribute('href', '/dashboard/events/e1');
+    expect(link).toHaveAttribute('href', '/e/demo/moderate');
   });
 
   it('mostra estado vazio', async () => {

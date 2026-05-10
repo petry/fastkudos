@@ -1,0 +1,105 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { LogOut, MessageCircle, Shield, Sparkles } from 'lucide-react';
+import type { Profile } from '@fastkudos/shared';
+import type { EventSummary } from '../../participants/domain/ports';
+import { Avatar } from '../../../components/ui/Avatar';
+import { TopBar } from '../../../components/ui/TopBar';
+import { Sidebar, type SidebarItem } from '../../../components/ui/Sidebar';
+
+const SIDEBAR_KEY = 'fk:sidebar:expanded';
+
+function loadInitialExpanded(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const v = window.localStorage?.getItem(SIDEBAR_KEY);
+    if (v === 'true') return true;
+    if (v === 'false') return false;
+  } catch {
+    /* localStorage indisponível (ex.: storage desabilitado) */
+  }
+  return window.matchMedia?.('(min-width: 768px)')?.matches ?? true;
+}
+
+export interface EventShellProps {
+  slug: string;
+  profile: Profile;
+  event: EventSummary | null;
+  onSignOut: () => void;
+  children: ReactNode;
+}
+
+export function EventShell({ slug, profile, event, onSignOut, children }: EventShellProps) {
+  const [expanded, setExpanded] = useState<boolean>(loadInitialExpanded);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage?.setItem(SIDEBAR_KEY, expanded ? 'true' : 'false');
+    } catch {
+      /* ignora falhas de storage */
+    }
+  }, [expanded]);
+
+  const items: SidebarItem[] = [
+    { to: `/e/${slug}`, label: 'Mural', icon: Sparkles, end: true },
+    { to: `/e/${slug}/inbox`, label: 'Caixa de recados', icon: MessageCircle },
+    ...(profile.isAdmin
+      ? [{ to: `/e/${slug}/moderate`, label: 'Moderação', icon: Shield }]
+      : []),
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50/40">
+      <TopBar
+        onMenuClick={() => setMobileOpen(true)}
+        rightSlot={
+          <>
+            <div className="hidden text-right text-xs leading-tight sm:block">
+              <p data-testid="event-name" className="font-medium text-slate-800">
+                {event?.name ?? '…'}
+              </p>
+              <p data-testid="welcome" className="text-slate-500">
+                {profile.displayName}
+              </p>
+            </div>
+            <Avatar name={profile.displayName} imageUrl={profile.avatarUrl} size="sm" />
+          </>
+        }
+      />
+
+      <div className="mx-auto flex w-full max-w-7xl">
+        <Sidebar
+          items={items}
+          expanded={expanded}
+          onToggleExpanded={() => setExpanded((v) => !v)}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+          footer={
+            <button
+              type="button"
+              onClick={onSignOut}
+              aria-label="Sair"
+              title={!expanded ? 'Sair' : undefined}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+            >
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500">
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span
+                className={[
+                  'truncate',
+                  expanded ? 'opacity-100' : 'opacity-100 md:hidden',
+                ].join(' ')}
+              >
+                Sair
+              </span>
+            </button>
+          }
+        />
+
+        <main className="min-w-0 flex-1 px-4 py-8 sm:px-6 md:py-10">{children}</main>
+      </div>
+    </div>
+  );
+}

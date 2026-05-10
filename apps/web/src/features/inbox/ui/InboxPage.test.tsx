@@ -64,12 +64,12 @@ describe('<InboxPage>', () => {
     expect(await screen.findByTestId('event-name')).toHaveTextContent('Demo');
   });
 
-  it('mostra link Voltar para o evento à esquerda do botão Sair', async () => {
+  it('mostra link Mural no sidebar apontando para a home do evento', async () => {
     setup({ cached: { token: 't', profile: me } });
-    const back = await screen.findByRole('link', { name: /voltar/i });
-    expect(back).toHaveAttribute('href', '/e/demo');
-    const leave = screen.getByRole('button', { name: /sair/i });
-    expect(back.compareDocumentPosition(leave) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const mural = await screen.findByRole('link', { name: /mural/i });
+    expect(mural).toHaveAttribute('href', '/e/demo');
+    const leave = screen.getByRole('button', { name: /^sair$/i });
+    expect(mural.compareDocumentPosition(leave) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('redireciona para /e/:slug quando não há sessão', async () => {

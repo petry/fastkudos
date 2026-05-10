@@ -24,11 +24,14 @@ export function profileRepo(db: Database): ProfileRepo {
         .returning();
       return toProfile(inserted[0]!, null);
     },
-    async findOrCreateForUser({ userId, eventId, displayName }) {
+    async findOrCreateForUser({ userId, eventId, displayName, isAdmin }) {
       await db
         .insert(profiles)
-        .values({ userId, eventId, displayName })
-        .onConflictDoNothing({ target: [profiles.userId, profiles.eventId] });
+        .values({ userId, eventId, displayName, isAdmin })
+        .onConflictDoUpdate({
+          target: [profiles.userId, profiles.eventId],
+          set: { isAdmin },
+        });
       const rows = await db
         .select({ profile: profiles, avatarUrl: users.avatarUrl })
         .from(profiles)

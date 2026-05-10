@@ -90,7 +90,7 @@ describe('<OnboardingPage> anônimo', () => {
     await user.click(screen.getByRole('button', { name: /entrar/i }));
     expect(auth.registerAnon).toHaveBeenCalledWith({ slug: 'demo', displayName: 'Alice' });
     expect(session.save).toHaveBeenCalled();
-    expect(await screen.findByTestId('welcome')).toHaveTextContent('Olá, Alice!');
+    expect(await screen.findByTestId('welcome')).toHaveTextContent('Alice');
   });
 
   it('mostra mensagem de boas-vindas direto quando há sessão em cache', async () => {
@@ -98,7 +98,7 @@ describe('<OnboardingPage> anônimo', () => {
       cached: { token: 't', profile: { id: 'p1', displayName: 'Bob', eventId: 'e1', isAdmin: false, avatarUrl: null } },
     });
     await screen.findByText('Demo');
-    expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Bob!');
+    expect(screen.getByTestId('welcome')).toHaveTextContent('Bob');
   });
 
   it('exibe o nome do evento no header em vez da URL', async () => {
@@ -164,7 +164,7 @@ describe('<OnboardingPage> user logado', () => {
       slug: 'demo',
       userToken: 'jwt-user-token',
     }));
-    expect(await screen.findByTestId('welcome')).toHaveTextContent('Olá, Logado!');
+    expect(await screen.findByTestId('welcome')).toHaveTextContent('Logado');
   });
 
   it('mostra erro com link de volta quando o auto-join falha', async () => {
@@ -193,6 +193,6 @@ describe('<OnboardingPage> user logado', () => {
       },
     });
     await screen.findByText('Demo');
-    expect(screen.getByTestId('welcome')).toHaveTextContent('Olá, Anônimo!');
+    expect(screen.getByTestId('welcome')).toHaveTextContent('Anônimo');
   });
 });

@@ -33,6 +33,7 @@ export async function registerUserParticipant(
     userId: user.id,
     eventId: event.id,
     displayName: user.name,
+    isAdmin: event.ownerId === user.id,
   });
 
   const token = await deps.tokens.issueAnon({

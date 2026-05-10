@@ -12,7 +12,7 @@ import { websocketStream } from './features/mural/infra/websocket-stream';
 import { LoginPage } from './features/admin/ui/LoginPage';
 import { AuthCallbackPage } from './features/admin/ui/AuthCallbackPage';
 import { DashboardPage } from './features/admin/ui/DashboardPage';
-import { ModerationPage } from './features/admin/ui/ModerationPage';
+import { EventModerationPage } from './features/admin/ui/EventModerationPage';
 import {
   httpUserAuthGateway,
   httpOwnedEventsGateway,
@@ -57,6 +57,17 @@ export function App() {
         path="/e/:slug/inbox"
         element={<InboxPage session={session} participants={participants} inbox={inbox} />}
       />
+      <Route
+        path="/e/:slug/moderate"
+        element={
+          <EventModerationPage
+            session={session}
+            userSession={userSession}
+            participants={participants}
+            gateway={ownedEvents}
+          />
+        }
+      />
       <Route path="/login" element={<LoginPage auth={userAuth} />} />
       <Route
         path="/auth/callback"
@@ -65,10 +76,6 @@ export function App() {
       <Route
         path="/dashboard"
         element={<DashboardPage session={userSession} events={ownedEvents} />}
-      />
-      <Route
-        path="/dashboard/events/:id"
-        element={<ModerationPage session={userSession} gateway={ownedEvents} />}
       />
       <Route
         path="/superadmin"

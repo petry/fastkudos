@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Shield, Sparkles } from 'lucide-react';
+import { LogOut, Shield } from 'lucide-react';
 import type { UserSession } from '@fastkudos/shared';
 import { Avatar } from '../../../components/ui/Avatar';
+import { TopBar } from '../../../components/ui/TopBar';
 
 export interface AppShellProps {
   current: UserSession;
@@ -19,19 +20,9 @@ const WIDTH_CLASSES: Record<NonNullable<AppShellProps['width']>, string> = {
 export function AppShell({ current, onSignOut, width = '5xl', children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-slate-50/40">
-      <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 font-bold tracking-tight text-slate-900 transition hover:text-slate-700"
-          >
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-rose-500 text-white shadow-sm">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-            </span>
-            FastKudos
-          </Link>
-
-          <div className="flex items-center gap-2 sm:gap-3">
+      <TopBar
+        rightSlot={
+          <>
             <div className="hidden text-right text-xs leading-tight sm:block">
               <p className="font-medium text-slate-800">{current.name}</p>
               <p className="text-slate-500">
@@ -58,9 +49,9 @@ export function AppShell({ current, onSignOut, width = '5xl', children }: AppShe
               <LogOut className="h-4 w-4" aria-hidden="true" />
               <span>Sair</span>
             </button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className={`mx-auto ${WIDTH_CLASSES[width]} px-4 py-8 sm:px-6 md:py-10`}>
         {children}

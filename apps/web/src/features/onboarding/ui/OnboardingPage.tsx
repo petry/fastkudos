@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowRight, LogOut, MessageCircle, Sparkles, Users } from 'lucide-react';
+import { ArrowRight, Sparkles, Users } from 'lucide-react';
 import type { Profile } from '@fastkudos/shared';
 import { joinEvent, joinEventAsUser } from '../application/join-event';
 import type { AuthGateway, SessionStore } from '../domain/ports';
@@ -12,8 +12,8 @@ import type { KudosGateway } from '../../kudos/domain/ports';
 import { MuralFeed } from '../../mural/ui/MuralFeed';
 import type { EventStream, MuralGateway } from '../../mural/domain/ports';
 import { useKudoToasts } from '../../mural/ui/useKudoToasts';
-import { Avatar } from '../../../components/ui/Avatar';
 import { CollapsibleSection } from '../../../components/ui/CollapsibleSection';
+import { EventShell } from './EventShell';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
@@ -264,41 +264,8 @@ function JoinedView({
     : 0;
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-br from-sky-500 via-sky-400 to-rose-400 px-6 pb-10 pt-8 text-white">
-        <div className="mx-auto flex max-w-2xl items-center gap-4">
-          <Avatar name={joined.profile.displayName} imageUrl={joined.profile.avatarUrl} size="lg" />
-          <div className="flex-1">
-            <p className="text-xs uppercase tracking-wide text-white/70">Evento</p>
-            <p
-              data-testid="event-name"
-              className="text-sm font-medium text-white/90"
-            >
-              {event?.name ?? '…'}
-            </p>
-            <p data-testid="welcome" className="mt-1 text-xl font-semibold">
-              Olá, {joined.profile.displayName}!
-            </p>
-          </div>
-          <Link
-            to={`/e/${slug}/inbox`}
-            className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-white/25"
-          >
-            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-            Caixa de recados
-          </Link>
-          <button
-            type="button"
-            onClick={onLeave}
-            className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-white/25"
-          >
-            <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-            Sair
-          </button>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-2xl space-y-8 px-6 py-8">
+    <EventShell slug={slug} profile={joined.profile} event={event} onSignOut={onLeave}>
+      <div className="mx-auto max-w-2xl space-y-8">
         <CollapsibleSection title="Participantes" icon={Users} count={otherCount} defaultExpanded={false}>
           {profilesError ? (
             <p role="alert" className="text-red-600">
@@ -327,6 +294,6 @@ function JoinedView({
           />
         </CollapsibleSection>
       </div>
-    </main>
+    </EventShell>
   );
 }
