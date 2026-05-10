@@ -1,10 +1,6 @@
-import type { Profile } from '@fastkudos/shared';
+import type { EventSummary, Profile } from '@fastkudos/shared';
 
-export interface EventSummary {
-  id: string;
-  name: string;
-  slug: string;
-}
+export type { EventSummary };
 
 export interface EventBySlug {
   findBySlug(slug: string): Promise<EventSummary | null>;

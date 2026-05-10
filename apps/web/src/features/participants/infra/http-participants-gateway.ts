@@ -1,6 +1,6 @@
-import type { Profile } from '@fastkudos/shared';
+import { participantsListResponse } from '@fastkudos/shared';
 import { createHttpClient } from '../../../lib/http';
-import type { EventSummary, ParticipantsGateway } from '../domain/ports';
+import type { ParticipantsGateway } from '../domain/ports';
 
 export function httpParticipantsGateway(
   baseUrl: string,
@@ -8,11 +8,9 @@ export function httpParticipantsGateway(
 ): ParticipantsGateway {
   const http = createHttpClient(baseUrl, fetchImpl);
   return {
-    list({ slug, token }) {
-      return http.get<{ event: EventSummary; profiles: Profile[] }>(
-        `/events/${encodeURIComponent(slug)}/profiles`,
-        { token },
-      );
+    async list({ slug, token }) {
+      const data = await http.get(`/events/${encodeURIComponent(slug)}/profiles`, { token });
+      return participantsListResponse.parse(data);
     },
   };
 }
