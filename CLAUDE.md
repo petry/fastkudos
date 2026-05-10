@@ -64,7 +64,9 @@ Sem `pg-mem` — preferimos Postgres real para evitar mock/prod skew.
 ## 6. Convenções
 
 - **TypeScript estrito** em todos os pacotes.
-- **Zod schemas** em `packages/shared` são fonte única para DTOs; backend valida na borda, front valida pré-submit.
+- **Zod schemas** em `packages/shared` são fonte única para DTOs **e respostas** (`schemas/responses.ts`). Backend valida na borda; front faz `schema.parse(json)` na resposta — não usar casts (`as { … }`).
+- **Erros de domínio** (use cases) lançam subclasses de `DomainError` (`apps/api/src/errors/domain.ts`); rotas **não** usam try/catch — o middleware `handleDomainError` em `index.ts` traduz para HTTP. Cada erro carrega `code` (string estável usada no body) e `status`.
+- **Mappers Drizzle → domínio**: usar `apps/api/src/db/mappers.ts` (`toFeedback`, `toEvent`, `toProfile`). Não duplicar mapping inline em repos.
 - **Comentários**: por padrão, nenhum. Só quando o **porquê** for não-óbvio (invariante escondida, workaround documentado).
 - **Sem código morto**: feature flags só quando há decisão de rollout; senão, delete.
 - **Mensagens de commit**: imperativas, pt-BR ou inglês consistente por commit.
@@ -114,3 +116,34 @@ Ao trabalhar com Claude Code, prefira delegar para agentes focados em vez de faz
 - **regression-writer** — "Bug: <descrição>. Escreva primeiro um teste que reproduza o bug; só então proponha o fix."
 - **authz-reviewer** — "Revise este endpoint/use case quanto a vazamento entre eventos e escalada de privilégio. Aponte tentativas negadas que faltam testes."
 - **simplifier** — "Passe de simplificação: encontre duplicação, abstrações prematuras, código morto. Proponha diff."
+
+## 12. Abstrações compartilhadas (use antes de criar)
+
+Antes de escrever boilerplate, cheque se já existe um helper. Se o caso for novo, prefira **estender** o helper a duplicar.
+
+**Backend (`apps/api/src/`)**
+
+| Padrão | Onde vive | Quando usar |
+|---|---|---|
+| Mappers row Drizzle → domínio | `db/mappers.ts` | Qualquer repo que retorna `Feedback`, `Event`, `Profile`. |
+| Hierarquia de erros + codes | `errors/domain.ts` | Use cases lançam `NotFoundError('event_not_found')` / `ForbiddenError()` / `ConflictError('slug_taken')` / `ValidationError('invalid_input', _, issues)`. |
+| Middleware HTTP de erro | `errors/error-handler.ts` (registrado em `index.ts` via `app.onError`) | Já cobre todas as rotas. **Não** adicionar try/catch em handlers — deixe o erro borbulhar. |
+
+**Frontend (`apps/web/src/lib/`)**
+
+| Padrão | Hook/factory | Quando usar |
+|---|---|---|
+| Cliente HTTP unificado | `createHttpClient(baseUrl)` em `http.ts` | Todo gateway novo. Lança `ApiError(status, code)` em respostas !ok; `.message === code` (testes de UI dependem disso). |
+| Fetch + cancel + estado | `useAsyncData(loader, deps)` em `use-async-data.ts` | Qualquer componente que carrega dados de um gateway. Expõe `setData` para mutações in-place após delete/update. |
+| Submit de formulário | `useFormSubmit()` em `use-form-submit.ts` | Forms com gateway. `run(async () => { … })` cuida de `submitting`, `error` e try/catch. Validação local lança `Error` para acionar o caminho de erro. |
+
+**Shared (`packages/shared/src/schemas/`)**
+
+| Padrão | Onde vive | Quando usar |
+|---|---|---|
+| Schemas de **resposta** da API | `responses.ts` | Toda nova rota cria um schema aqui. Front faz `schema.parse(data)`; back tipa o handler com `z.infer<typeof schema>`. |
+| Tipos compartilhados (ex.: `EventSummary`) | `responses.ts` | Não duplicar interfaces idênticas em web/api — exporte do shared. |
+
+**Casos que **não** cobrem (ainda)**:
+- Streams WebSocket combinados com fetch inicial (ex.: `MuralFeed`) — padrão em aberto, hoje implementado manualmente.
+- Refetch on-demand (`refetch()`) e cache — `useAsyncData` é one-shot. Se precisar, evolua o hook em vez de adotar React Query agora.
