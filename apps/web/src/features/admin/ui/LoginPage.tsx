@@ -38,8 +38,10 @@ export function LoginPage({ auth, defaultRedirect = '/dashboard' }: LoginPagePro
         Entrar no FastKudos
       </h1>
       <p className="mt-2 text-sm text-slate-600">
-        Faça login para criar e gerenciar seus eventos. Para apenas participar de um evento, abra o
-        link recebido (<code className="rounded bg-slate-100 px-1 py-0.5 text-xs">/e/&lt;slug&gt;</code>).
+        Bem-vindo! Faça login para criar seus próprios eventos de kudos.
+      </p>
+      <p className="mt-2 text-sm text-slate-600">
+        Se você foi convidado para um, é só abrir o link que recebeu.
       </p>
 
       <div className="mt-6 space-y-2">
