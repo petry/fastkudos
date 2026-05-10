@@ -1,8 +1,8 @@
 import type { Profile } from '@fastkudos/shared';
+import { ForbiddenError, NotFoundError } from '../../../errors/domain';
 import type { EventBySlug, EventSummary, ParticipantsRepo } from '../domain/ports';
 
-export class NotFoundError extends Error {}
-export class ForbiddenError extends Error {}
+export { ForbiddenError, NotFoundError };
 
 export interface ListParticipantsDeps {
   events: EventBySlug;
@@ -24,8 +24,8 @@ export async function listParticipants(
   cmd: ListParticipantsCommand,
 ): Promise<ListParticipantsResult> {
   const event = await deps.events.findBySlug(cmd.slug);
-  if (!event) throw new NotFoundError('evento não encontrado');
-  if (event.id !== cmd.callerEventId) throw new ForbiddenError('cross-event');
+  if (!event) throw new NotFoundError('event_not_found');
+  if (event.id !== cmd.callerEventId) throw new ForbiddenError('forbidden', 'cross-event');
   const profiles = await deps.participants.listByEvent(event.id);
   return { event, profiles };
 }

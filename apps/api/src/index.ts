@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { Database } from './db/client';
+import { handleDomainError } from './errors/error-handler';
 import { authRoutes } from './routes/auth';
 import { eventRoutes } from './routes/events';
 import { kudoRoutes } from './routes/kudos';
@@ -46,5 +47,7 @@ app.route('/inbox', inboxRoutes);
 app.route('/mural', muralRoutes);
 app.route('/me', meEventsRoutes);
 app.route('/superadmin', superadminRoutes);
+
+app.onError(handleDomainError);
 
 export default app;

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import type { Feedback } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
+import { toFeedback } from '../../../db/mappers';
 import { feedbacks, profiles } from '../../../../drizzle/schema';
 import type { FeedbackRepo, ProfileLookup } from '../domain/ports';
 
@@ -21,16 +21,7 @@ export function feedbackRepo(db: Database): FeedbackRepo {
   return {
     async create(input) {
       const inserted = await db.insert(feedbacks).values(input).returning();
-      const row = inserted[0]!;
-      const fb: Feedback = {
-        id: row.id,
-        createdAt: row.createdAt.toISOString(),
-        senderId: row.senderId,
-        receiverId: row.receiverId,
-        eventId: row.eventId,
-        content: row.content,
-      };
-      return fb;
+      return toFeedback(inserted[0]!);
     },
   };
 }

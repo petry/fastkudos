@@ -1,8 +1,8 @@
+import { ForbiddenError, NotFoundError } from '../../../errors/domain';
 import type { FeedbackOwnership, ProfileOwnership } from '../domain/ports';
 import type { Actor } from '../domain/actor';
 
-export class NotFoundError extends Error {}
-export class ForbiddenError extends Error {}
+export { ForbiddenError, NotFoundError };
 
 export async function deleteFeedbackAsAdmin(
   deps: { feedbacks: FeedbackOwnership },

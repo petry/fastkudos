@@ -1,8 +1,8 @@
 import type { Feedback } from '@fastkudos/shared';
+import { ForbiddenError, NotFoundError } from '../../../errors/domain';
 import type { Actor } from '../domain/actor';
 
-export class NotFoundError extends Error {}
-export class ForbiddenError extends Error {}
+export { ForbiddenError, NotFoundError };
 
 export interface OwnedEventLookup {
   ownerOfEvent(eventId: string): Promise<string | null>;

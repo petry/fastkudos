@@ -4,7 +4,7 @@ import { anonAuthInput, eventJoinInput } from '@fastkudos/shared';
 import { getDb } from '../db/factory';
 import { signJwt } from '../auth/jwt';
 import { requireAuth, requireUser, getLoggedUser, type AuthContext } from '../auth/middleware';
-import { NotFoundError, registerAnonParticipant } from '../features/onboarding/application/register-anon';
+import { registerAnonParticipant } from '../features/onboarding/application/register-anon';
 import { registerUserParticipant } from '../features/onboarding/application/register-user-participant';
 import { eventLookup, profileRepo } from '../features/onboarding/infra/repos';
 import { loginWithOauth } from '../features/auth/application/login-with-oauth';
@@ -36,27 +36,22 @@ authRoutes.post('/anon', async (c) => {
   const db = getDb(c.env);
   const secret = c.env.JWT_SECRET;
 
-  try {
-    const result = await registerAnonParticipant(
-      {
-        events: eventLookup(db),
-        profiles: profileRepo(db),
-        tokens: {
-          issueAnon: ({ profileId, eventId, displayName }) =>
-            signJwt(
-              { sub: profileId, kind: 'anon', event_id: eventId, display_name: displayName },
-              secret,
-              ANON_TTL_SECONDS,
-            ),
-        },
+  const result = await registerAnonParticipant(
+    {
+      events: eventLookup(db),
+      profiles: profileRepo(db),
+      tokens: {
+        issueAnon: ({ profileId, eventId, displayName }) =>
+          signJwt(
+            { sub: profileId, kind: 'anon', event_id: eventId, display_name: displayName },
+            secret,
+            ANON_TTL_SECONDS,
+          ),
       },
-      parsed.data,
-    );
-    return c.json(result, 201);
-  } catch (e) {
-    if (e instanceof NotFoundError) return c.json({ error: 'event_not_found' }, 404);
-    throw e;
-  }
+    },
+    parsed.data,
+  );
+  return c.json(result, 201);
 });
 
 authRoutes.post('/event-join', requireAuth(), requireUser(), async (c) => {
@@ -70,28 +65,23 @@ authRoutes.post('/event-join', requireAuth(), requireUser(), async (c) => {
   const db = getDb(c.env);
   const secret = c.env.JWT_SECRET;
 
-  try {
-    const result = await registerUserParticipant(
-      {
-        events: eventLookup(db),
-        profiles: profileRepo(db),
-        users: userRepo(db),
-        tokens: {
-          issueAnon: ({ profileId, eventId, displayName }) =>
-            signJwt(
-              { sub: profileId, kind: 'anon', event_id: eventId, display_name: displayName },
-              secret,
-              ANON_TTL_SECONDS,
-            ),
-        },
+  const result = await registerUserParticipant(
+    {
+      events: eventLookup(db),
+      profiles: profileRepo(db),
+      users: userRepo(db),
+      tokens: {
+        issueAnon: ({ profileId, eventId, displayName }) =>
+          signJwt(
+            { sub: profileId, kind: 'anon', event_id: eventId, display_name: displayName },
+            secret,
+            ANON_TTL_SECONDS,
+          ),
       },
-      { slug: parsed.data.slug, userId: u.userId },
-    );
-    return c.json(result, 201);
-  } catch (e) {
-    if (e instanceof NotFoundError) return c.json({ error: 'event_not_found' }, 404);
-    throw e;
-  }
+    },
+    { slug: parsed.data.slug, userId: u.userId },
+  );
+  return c.json(result, 201);
 });
 
 function isSecureRedirect(uri: string): boolean {

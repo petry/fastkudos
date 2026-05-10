@@ -4,11 +4,7 @@ import { requireAuth, requireSuperadmin, type AuthContext } from '../auth/middle
 import { getDb } from '../db/factory';
 import { listAllEvents } from '../features/admin/application/list-all-events';
 import { allEventsRepo } from '../features/admin/infra/repos';
-import {
-  LastSuperadminError,
-  NotFoundError,
-  updateUserRole,
-} from '../features/auth/application/update-user-role';
+import { updateUserRole } from '../features/auth/application/update-user-role';
 import { userRepo } from '../features/auth/infra/repos';
 
 const updateRoleInput = z.object({
@@ -45,23 +41,17 @@ superadminRoutes.patch('/users/:id', async (c) => {
   if (!parsed.success) return c.json({ error: 'invalid_input' }, 400);
 
   const db = getDb(c.env);
-  try {
-    const user = await updateUserRole(
-      { users: userRepo(db) },
-      { userId: c.req.param('id'), role: parsed.data.role },
-    );
-    return c.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-      },
-    });
-  } catch (e) {
-    if (e instanceof NotFoundError) return c.json({ error: 'not_found' }, 404);
-    if (e instanceof LastSuperadminError) return c.json({ error: 'last_superadmin' }, 409);
-    throw e;
-  }
+  const user = await updateUserRole(
+    { users: userRepo(db) },
+    { userId: c.req.param('id'), role: parsed.data.role },
+  );
+  return c.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+    },
+  });
 });

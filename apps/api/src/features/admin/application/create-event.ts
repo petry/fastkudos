@@ -1,7 +1,12 @@
 import { createEventInput } from '@fastkudos/shared';
+import { ConflictError } from '../../../errors/domain';
 import type { EventRepo } from '../domain/ports';
 
-export class SlugTakenError extends Error {}
+export class SlugTakenError extends ConflictError {
+  constructor() {
+    super('slug_taken');
+  }
+}
 
 export interface CreateEventDeps {
   events: EventRepo;

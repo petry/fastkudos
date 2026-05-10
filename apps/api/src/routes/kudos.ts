@@ -2,11 +2,7 @@ import { Hono } from 'hono';
 import { submitKudoInput } from '@fastkudos/shared';
 import { requireAuth, requireAnon, getAnonUser, type AuthContext } from '../auth/middleware';
 import { getDb } from '../db/factory';
-import {
-  AuthorizationError,
-  NotFoundError,
-  submitKudo,
-} from '../features/kudos/application/submit-kudo';
+import { submitKudo } from '../features/kudos/application/submit-kudo';
 import { feedbackRepo, profileLookup } from '../features/kudos/infra/repos';
 import { durableObjectPublisher } from '../realtime/publisher';
 
@@ -23,24 +19,18 @@ kudoRoutes.post('/', async (c) => {
   }
 
   const db = getDb(c.env);
-  try {
-    const feedback = await submitKudo(
-      {
-        profiles: profileLookup(db),
-        feedbacks: feedbackRepo(db),
-        realtime: durableObjectPublisher(c.env.EVENT_CHANNEL),
-      },
-      {
-        senderId: user.profileId,
-        senderEventId: user.eventId,
-        receiverId: parsed.data.receiverId,
-        content: parsed.data.content,
-      },
-    );
-    return c.json({ feedback }, 201);
-  } catch (e) {
-    if (e instanceof NotFoundError) return c.json({ error: 'receiver_not_found' }, 404);
-    if (e instanceof AuthorizationError) return c.json({ error: 'forbidden' }, 403);
-    throw e;
-  }
+  const feedback = await submitKudo(
+    {
+      profiles: profileLookup(db),
+      feedbacks: feedbackRepo(db),
+      realtime: durableObjectPublisher(c.env.EVENT_CHANNEL),
+    },
+    {
+      senderId: user.profileId,
+      senderEventId: user.eventId,
+      receiverId: parsed.data.receiverId,
+      content: parsed.data.content,
+    },
+  );
+  return c.json({ feedback }, 201);
 });

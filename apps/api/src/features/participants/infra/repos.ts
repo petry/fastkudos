@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import type { Profile } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
+import { toProfile } from '../../../db/mappers';
 import { events, profiles, users } from '../../../../drizzle/schema';
 import type { EventBySlug, ParticipantsRepo } from '../domain/ports';
 
@@ -25,13 +25,7 @@ export function participantsRepo(db: Database): ParticipantsRepo {
         .from(profiles)
         .leftJoin(users, eq(users.id, profiles.userId))
         .where(eq(profiles.eventId, eventId));
-      return rows.map<Profile>((r) => ({
-        id: r.profile.id,
-        displayName: r.profile.displayName,
-        eventId: r.profile.eventId,
-        isAdmin: r.profile.isAdmin,
-        avatarUrl: r.avatarUrl,
-      }));
+      return rows.map((r) => toProfile(r.profile, r.avatarUrl));
     },
   };
 }

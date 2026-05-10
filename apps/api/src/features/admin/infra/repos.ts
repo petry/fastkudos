@@ -1,6 +1,6 @@
 import { desc, eq } from 'drizzle-orm';
-import type { Event, Feedback } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
+import { toEvent, toFeedback, toProfile } from '../../../db/mappers';
 import { events, feedbacks, profiles, users } from '../../../../drizzle/schema';
 import type {
   EventRepo,
@@ -71,16 +71,6 @@ export function profileOwnership(db: Database): ProfileOwnership {
   };
 }
 
-function rowToEvent(r: typeof events.$inferSelect): Event {
-  return {
-    id: r.id,
-    createdAt: r.createdAt.toISOString(),
-    name: r.name,
-    slug: r.slug,
-    ownerId: r.ownerId,
-  };
-}
-
 export function ownedEventsRepo(db: Database): OwnedEventsRepo {
   return {
     async listByOwner(ownerId) {
@@ -89,7 +79,7 @@ export function ownedEventsRepo(db: Database): OwnedEventsRepo {
         .from(events)
         .where(eq(events.ownerId, ownerId))
         .orderBy(desc(events.createdAt));
-      return rows.map(rowToEvent);
+      return rows.map(toEvent);
     },
   };
 }
@@ -98,7 +88,7 @@ export function allEventsRepo(db: Database): AllEventsRepo {
   return {
     async listAll() {
       const rows = await db.select().from(events).orderBy(desc(events.createdAt));
-      return rows.map(rowToEvent);
+      return rows.map(toEvent);
     },
   };
 }
@@ -124,14 +114,7 @@ export function eventFeedbacksRepo(db: Database): EventFeedbacksRepo {
         .from(feedbacks)
         .where(eq(feedbacks.eventId, eventId))
         .orderBy(desc(feedbacks.createdAt));
-      return rows.map<Feedback>((r) => ({
-        id: r.id,
-        createdAt: r.createdAt.toISOString(),
-        senderId: r.senderId,
-        receiverId: r.receiverId,
-        eventId: r.eventId,
-        content: r.content,
-      }));
+      return rows.map(toFeedback);
     },
   };
 }
@@ -145,13 +128,7 @@ export function eventProfilesRepo(db: Database): EventProfilesRepo {
         .leftJoin(users, eq(users.id, profiles.userId))
         .where(eq(profiles.eventId, eventId))
         .orderBy(desc(profiles.createdAt));
-      return rows.map((r) => ({
-        id: r.profile.id,
-        displayName: r.profile.displayName,
-        eventId: r.profile.eventId,
-        isAdmin: r.profile.isAdmin,
-        avatarUrl: r.avatarUrl,
-      }));
+      return rows.map((r) => toProfile(r.profile, r.avatarUrl));
     },
   };
 }

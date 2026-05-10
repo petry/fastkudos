@@ -1,8 +1,14 @@
+import { ConflictError, NotFoundError } from '../../../errors/domain';
 import type { UserRecord, UserRole } from '../domain/oauth-profile';
 import type { UserRepo } from '../domain/ports';
 
-export class NotFoundError extends Error {}
-export class LastSuperadminError extends Error {}
+export { NotFoundError };
+
+export class LastSuperadminError extends ConflictError {
+  constructor() {
+    super('last_superadmin');
+  }
+}
 
 export async function updateUserRole(
   deps: { users: UserRepo },

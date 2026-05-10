@@ -2,11 +2,7 @@ import { Hono } from 'hono';
 import { requireAuth, requireAnon, getAnonUser, type AuthContext } from '../auth/middleware';
 import { verifyJwt } from '../auth/jwt';
 import { getDb } from '../db/factory';
-import {
-  ForbiddenError,
-  NotFoundError,
-  listParticipants,
-} from '../features/participants/application/list-participants';
+import { listParticipants } from '../features/participants/application/list-participants';
 import { eventBySlug, participantsRepo } from '../features/participants/infra/repos';
 
 export const eventRoutes = new Hono<AuthContext>();
@@ -44,15 +40,9 @@ eventRoutes.get('/:slug/profiles', async (c) => {
   const slug = c.req.param('slug');
   const db = getDb(c.env);
 
-  try {
-    const result = await listParticipants(
-      { events: eventBySlug(db), participants: participantsRepo(db) },
-      { slug, callerEventId: user.eventId },
-    );
-    return c.json(result);
-  } catch (e) {
-    if (e instanceof NotFoundError) return c.json({ error: 'event_not_found' }, 404);
-    if (e instanceof ForbiddenError) return c.json({ error: 'forbidden' }, 403);
-    throw e;
-  }
+  const result = await listParticipants(
+    { events: eventBySlug(db), participants: participantsRepo(db) },
+    { slug, callerEventId: user.eventId },
+  );
+  return c.json(result);
 });

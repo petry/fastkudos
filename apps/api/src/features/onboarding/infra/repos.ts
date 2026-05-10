@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
-import type { Event, Profile } from '@fastkudos/shared';
 import type { Database } from '../../../db/client';
+import { toEvent, toProfile } from '../../../db/mappers';
 import { events, profiles, users } from '../../../../drizzle/schema';
 import type { EventLookup, ProfileRepo } from '../domain/ports';
 
@@ -41,25 +41,5 @@ export function profileRepo(db: Database): ProfileRepo {
       const row = rows[0]!;
       return toProfile(row.profile, row.avatarUrl);
     },
-  };
-}
-
-function toEvent(row: typeof events.$inferSelect): Event {
-  return {
-    id: row.id,
-    createdAt: row.createdAt.toISOString(),
-    name: row.name,
-    slug: row.slug,
-    ownerId: row.ownerId,
-  };
-}
-
-function toProfile(row: typeof profiles.$inferSelect, avatarUrl: string | null): Profile {
-  return {
-    id: row.id,
-    displayName: row.displayName,
-    eventId: row.eventId,
-    isAdmin: row.isAdmin,
-    avatarUrl,
   };
 }

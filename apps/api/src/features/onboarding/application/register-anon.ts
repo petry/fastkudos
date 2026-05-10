@@ -1,7 +1,8 @@
 import { displayNameSchema, type Profile } from '@fastkudos/shared';
+import { NotFoundError } from '../../../errors/domain';
 import type { EventLookup, ProfileRepo, TokenIssuer } from '../domain/ports';
 
-export class NotFoundError extends Error {}
+export { NotFoundError };
 
 export interface RegisterAnonDeps {
   events: EventLookup;
@@ -26,7 +27,7 @@ export async function registerAnonParticipant(
   const displayName = displayNameSchema.parse(cmd.displayName);
 
   const event = await deps.events.findBySlug(cmd.slug);
-  if (!event) throw new NotFoundError('evento não encontrado');
+  if (!event) throw new NotFoundError('event_not_found');
 
   const profile = await deps.profiles.create({ displayName, eventId: event.id });
   const token = await deps.tokens.issueAnon({

@@ -1,9 +1,9 @@
+import { ForbiddenError, NotFoundError } from '../../../errors/domain';
 import type { EventRepo } from '../domain/ports';
 import type { OwnedEventLookup } from './list-event-feedbacks';
 import type { Actor } from '../domain/actor';
 
-export class NotFoundError extends Error {}
-export class ForbiddenError extends Error {}
+export { ForbiddenError, NotFoundError };
 
 export interface DeleteEventDeps {
   events: OwnedEventLookup;
