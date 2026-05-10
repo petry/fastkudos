@@ -1,22 +1,15 @@
 import type { Feedback } from '@fastkudos/shared';
+import { createHttpClient } from '../../../lib/http';
 import type { KudosGateway } from '../domain/ports';
 
 export function httpKudosGateway(baseUrl: string, fetchImpl: typeof fetch = fetch): KudosGateway {
+  const http = createHttpClient(baseUrl, fetchImpl);
   return {
     async submit({ token, receiverId, content }) {
-      const res = await fetchImpl(`${baseUrl}/kudos`, {
-        method: 'POST',
-        headers: {
-          authorization: `Bearer ${token}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ receiverId, content }),
+      const data = await http.post<{ feedback: Feedback }>('/kudos', {
+        token,
+        body: { receiverId, content },
       });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? `submit_failed_${res.status}`);
-      }
-      const data = (await res.json()) as { feedback: Feedback };
       return data.feedback;
     },
   };
