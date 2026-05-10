@@ -11,6 +11,7 @@ import { InboxList } from './InboxList';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import { EventShell } from '../../onboarding/ui/EventShell';
 import { useAsyncData } from '../../../lib/use-async-data';
+import { trackEvent } from '../../../lib/analytics';
 
 export interface InboxPageProps {
   session: SessionStore;
@@ -27,7 +28,11 @@ export function InboxPage({ session, userSession, participants, inbox }: InboxPa
   const token = joined?.token ?? '';
 
   useEffect(() => {
-    if (!joined) navigate(`/e/${slug}`, { replace: true });
+    if (!joined) {
+      navigate(`/e/${slug}`, { replace: true });
+      return;
+    }
+    trackEvent('inbox_open', { event_slug: slug });
   }, [joined, navigate, slug]);
 
   const { data: participantsData } = useAsyncData(

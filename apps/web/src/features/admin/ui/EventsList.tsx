@@ -13,6 +13,7 @@ import { slugSchema } from '@fastkudos/shared';
 import type { OwnedEventsGateway } from '../domain/ports';
 import { useAsyncData } from '../../../lib/use-async-data';
 import { useFormSubmit } from '../../../lib/use-form-submit';
+import { trackEvent } from '../../../lib/analytics';
 
 export interface EventsListProps {
   token: string;
@@ -30,13 +31,14 @@ export function EventsList({ token, gateway }: EventsListProps) {
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  async function handleDelete(eventId: string, name: string) {
+  async function handleDelete(eventId: string, name: string, slug: string) {
     const confirmed = window.confirm(
       `Apagar o evento "${name}"? Todos os participantes e mensagens serão removidos. Esta ação é irreversível.`,
     );
     if (!confirmed) return;
     try {
       await gateway.delete({ token, eventId });
+      trackEvent('admin_event_delete', { event_slug: slug });
       setItems((prev) => (prev ? prev.filter((e) => e.id !== eventId) : prev));
     } catch (e) {
       setMutationError(e instanceof Error ? e.message : 'erro');
@@ -167,7 +169,7 @@ export function EventsList({ token, gateway }: EventsListProps) {
               </button>
               <button
                 type="button"
-                onClick={() => handleDelete(e.id, e.name)}
+                onClick={() => handleDelete(e.id, e.name, e.slug)}
                 aria-label="Apagar"
                 title="Apagar evento"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"

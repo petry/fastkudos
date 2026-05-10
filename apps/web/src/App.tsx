@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { usePageViewTracking } from './lib/use-page-view-tracking';
 import { HomePage } from './features/home/ui/HomePage';
 import { OnboardingPage } from './features/onboarding/ui/OnboardingPage';
 import { httpAuthGateway } from './features/onboarding/infra/http-auth-gateway';
@@ -35,6 +36,7 @@ const userSession = localUserSessionStore();
 const superadmin = httpSuperadminGateway(apiUrl);
 
 export function App() {
+  usePageViewTracking();
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />

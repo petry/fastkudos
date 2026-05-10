@@ -6,6 +6,7 @@ import { Avatar } from '../../../components/ui/Avatar';
 import { TopBar } from '../../../components/ui/TopBar';
 import { Sidebar, type SidebarItem } from '../../../components/ui/Sidebar';
 import { loadInitialExpanded, persistExpanded } from '../../../components/ui/sidebarState';
+import { trackEvent } from '../../../lib/analytics';
 
 export interface EventShellProps {
   slug: string;
@@ -89,7 +90,10 @@ export function EventShell({
           footer={
             <button
               type="button"
-              onClick={onSignOut}
+              onClick={() => {
+                trackEvent('event_exit', { event_slug: slug });
+                onSignOut();
+              }}
               aria-label="Sair"
               title={!expanded ? 'Sair' : undefined}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"

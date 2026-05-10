@@ -11,6 +11,7 @@ import { Avatar } from '../../../components/ui/Avatar';
 import { KudoCard } from '../../../components/ui/KudoCard';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import { useAsyncData } from '../../../lib/use-async-data';
+import { currentEventSlug, trackEvent } from '../../../lib/analytics';
 
 export interface EventModerationPageProps {
   session: SessionStore;
@@ -37,7 +38,9 @@ export function EventModerationPage({
     }
     if (!logged) {
       navigate('/login', { replace: true });
+      return;
     }
+    trackEvent('admin_moderate_open', { event_slug: slug });
   }, [joined, logged, navigate, slug]);
 
   const { data: participantsData } = useAsyncData(
@@ -124,6 +127,7 @@ function FeedbacksSection({
     setBusyId(feedbackId);
     try {
       await gateway.deleteFeedback({ token, feedbackId });
+      trackEvent('admin_feedback_delete', { event_slug: currentEventSlug() });
       setData((prev) =>
         prev ? { ...prev, items: prev.items.filter((f) => f.id !== feedbackId) } : prev,
       );

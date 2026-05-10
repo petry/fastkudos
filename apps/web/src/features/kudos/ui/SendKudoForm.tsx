@@ -5,6 +5,7 @@ import { validateKudoContent } from '../domain/validate';
 import type { KudosGateway } from '../domain/ports';
 import { Avatar } from '../../../components/ui/Avatar';
 import { useFormSubmit } from '../../../lib/use-form-submit';
+import { currentEventSlug, trackEvent } from '../../../lib/analytics';
 
 export interface SendKudoFormProps {
   receiver: { id: string; displayName: string; avatarUrl?: string | null };
@@ -21,11 +22,20 @@ export function SendKudoForm({ receiver, token, gateway, onSent, onCancel }: Sen
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await run(async () => {
-      const v = validateKudoContent(content);
-      if (!v.ok) throw new Error(v.error);
-      await gateway.submit({ token, receiverId: receiver.id, content: v.value });
-      setContent('');
-      onSent?.();
+      try {
+        const v = validateKudoContent(content);
+        if (!v.ok) throw new Error(v.error);
+        await gateway.submit({ token, receiverId: receiver.id, content: v.value });
+        trackEvent('kudo_send', { event_slug: currentEventSlug(), length: v.value.length });
+        setContent('');
+        onSent?.();
+      } catch (err) {
+        trackEvent('kudo_send_error', {
+          event_slug: currentEventSlug(),
+          error_code: err instanceof Error ? err.message : 'unknown',
+        });
+        throw err;
+      }
     });
   }
 

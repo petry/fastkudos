@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import type { UserAuthGateway } from '../domain/ports';
 import { AuthShell } from './AuthShell';
+import { trackEvent } from '../../../lib/analytics';
 
 export interface LoginPageProps {
   auth: UserAuthGateway;
@@ -25,7 +26,10 @@ export function LoginPage({ auth, defaultRedirect = '/dashboard' }: LoginPagePro
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (errorParam) setErrorMsg(ERROR_LABELS[errorParam] ?? 'Erro desconhecido.');
+    if (errorParam) {
+      setErrorMsg(ERROR_LABELS[errorParam] ?? 'Erro desconhecido.');
+      trackEvent('auth_error', { error_code: errorParam });
+    }
   }, [errorParam]);
 
   return (
@@ -41,7 +45,10 @@ export function LoginPage({ auth, defaultRedirect = '/dashboard' }: LoginPagePro
       <div className="mt-6 space-y-2">
         <button
           type="button"
-          onClick={() => auth.startGoogleLogin(defaultRedirect)}
+          onClick={() => {
+            trackEvent('admin_login_start', { provider: 'google' });
+            auth.startGoogleLogin(defaultRedirect);
+          }}
           className={PROVIDER_BUTTON_CLASS}
         >
           <GoogleIcon />

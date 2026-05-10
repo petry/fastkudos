@@ -16,6 +16,7 @@ import { useKudoToasts } from '../../mural/ui/useKudoToasts';
 import { CollapsibleSection } from '../../../components/ui/CollapsibleSection';
 import { EventShell } from './EventShell';
 import { useAsyncData } from '../../../lib/use-async-data';
+import { trackEvent } from '../../../lib/analytics';
 
 export interface OnboardingPageProps {
   auth: AuthGateway;
@@ -52,6 +53,7 @@ export function OnboardingPage(props: OnboardingPageProps) {
       .then((s) => {
         if (cancelled) return;
         setJoined(s);
+        trackEvent('event_join', { event_slug: slug, method: 'google' });
         props.onJoined?.(s);
       })
       .catch((e) => {
@@ -141,6 +143,7 @@ function JoinForm({ slug, auth, session, userAuth, onJoined }: JoinFormProps) {
     setSubmitting(true);
     try {
       const s = await joinEvent({ auth, session }, { slug, displayName });
+      trackEvent('event_join', { event_slug: slug, method: 'anon' });
       onJoined(s);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'erro');

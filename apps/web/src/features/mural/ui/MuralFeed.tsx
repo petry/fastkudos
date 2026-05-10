@@ -4,6 +4,7 @@ import type { Feedback, Profile } from '@fastkudos/shared';
 import type { EventStream, MuralGateway } from '../domain/ports';
 import { applyMuralEvent } from '../domain/reduce';
 import { KudoCard } from '../../../components/ui/KudoCard';
+import { trackEvent } from '../../../lib/analytics';
 
 export interface MuralFeedProps {
   slug: string;
@@ -26,8 +27,12 @@ export function MuralFeed({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    trackEvent('mural_open', { event_slug: slug });
     let cancelled = false;
     const unsubscribe = stream.subscribe({ slug, token }, (e) => {
+      if (e.type === 'kudo.created') {
+        trackEvent('kudo_realtime_received', { event_slug: slug });
+      }
       setItems((prev) => applyMuralEvent(prev ?? [], e));
     });
     gateway

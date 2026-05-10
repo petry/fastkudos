@@ -4,6 +4,7 @@ import { slugSchema } from '@fastkudos/shared';
 import type { OwnedEventsGateway } from '../domain/ports';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import { useFormSubmit } from '../../../lib/use-form-submit';
+import { trackEvent } from '../../../lib/analytics';
 
 export interface CreateEventFormProps {
   token: string;
@@ -29,6 +30,7 @@ export function CreateEventForm({ token, gateway, onCreated }: CreateEventFormPr
         throw new Error(slugCheck.error.issues[0]?.message ?? 'slug inválido');
       }
       const event = await gateway.create({ token, name, slug });
+      trackEvent('admin_event_create', { event_slug: event.slug });
       setCreated(event);
       setName('');
       setSlug('');
@@ -41,6 +43,7 @@ export function CreateEventForm({ token, gateway, onCreated }: CreateEventFormPr
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackEvent('admin_event_link_copy', { event_slug: created?.slug });
       setTimeout(() => setCopied(false), 1500);
     } catch {
       // noop — fallback silencioso
