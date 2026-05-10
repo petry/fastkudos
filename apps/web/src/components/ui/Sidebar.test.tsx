@@ -15,7 +15,6 @@ interface RenderOpts {
   expanded?: boolean;
   mobileOpen?: boolean;
   footer?: React.ReactNode;
-  onToggleExpanded?: () => void;
   onMobileClose?: () => void;
 }
 
@@ -24,7 +23,6 @@ function renderSidebar({
   expanded = true,
   mobileOpen = false,
   footer,
-  onToggleExpanded = () => {},
   onMobileClose = () => {},
 }: RenderOpts = {}) {
   return render(
@@ -35,7 +33,6 @@ function renderSidebar({
       <Sidebar
         items={items}
         expanded={expanded}
-        onToggleExpanded={onToggleExpanded}
         mobileOpen={mobileOpen}
         onMobileClose={onMobileClose}
         footer={footer}
@@ -65,19 +62,6 @@ describe('<Sidebar>', () => {
   it('respeita end=true: /e/demo/inbox não ativa Mural', () => {
     renderSidebar({ initial: '/e/demo/inbox' });
     expect(screen.getByRole('link', { name: /mural/i })).not.toHaveAttribute('aria-current');
-  });
-
-  it('botão de toggle dispara onToggleExpanded', async () => {
-    const user = userEvent.setup();
-    const onToggleExpanded = vi.fn();
-    renderSidebar({ onToggleExpanded });
-    await user.click(screen.getByRole('button', { name: /recolher menu/i }));
-    expect(onToggleExpanded).toHaveBeenCalledTimes(1);
-  });
-
-  it('quando colapsado, mostra rótulo Expandir no toggle', () => {
-    renderSidebar({ expanded: false });
-    expect(screen.getByRole('button', { name: /expandir menu/i })).toBeInTheDocument();
   });
 
   it('renderiza o footer passado', () => {

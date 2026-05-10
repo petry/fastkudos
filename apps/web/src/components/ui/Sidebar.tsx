@@ -1,6 +1,6 @@
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronsLeft, ChevronsRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export type SidebarIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -17,7 +17,6 @@ export interface SidebarProps {
   /** Conteúdo no rodapé do sidebar (ex: botão Sair). */
   footer?: ReactNode;
   expanded: boolean;
-  onToggleExpanded: () => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
   ariaLabel?: string;
@@ -31,7 +30,6 @@ export function Sidebar({
   items,
   footer,
   expanded,
-  onToggleExpanded,
   mobileOpen,
   onMobileClose,
   ariaLabel = 'Navegação',
@@ -53,9 +51,9 @@ export function Sidebar({
       <aside
         aria-label={ariaLabel}
         className={[
-          // mobile: drawer fixo da esquerda
-          'fixed inset-y-0 left-0 z-40 w-64 transform border-r border-slate-100 bg-white transition-transform duration-200 ease-out',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          // mobile: drawer fixo da direita
+          'fixed inset-y-0 right-0 z-40 w-64 transform border-l border-slate-100 bg-white transition-transform duration-200 ease-out',
+          mobileOpen ? 'translate-x-0' : 'translate-x-full',
           // desktop: rail sticky, sem overlay
           'md:sticky md:top-[57px] md:z-0 md:h-[calc(100vh-57px)] md:translate-x-0 md:transition-[width] md:duration-200',
           railWidth,
@@ -127,23 +125,6 @@ export function Sidebar({
           {footer && (
             <div className="border-t border-slate-100 px-2 py-3">{footer}</div>
           )}
-
-          <button
-            type="button"
-            onClick={onToggleExpanded}
-            aria-label={expanded ? 'Recolher menu' : 'Expandir menu'}
-            aria-expanded={expanded}
-            className="hidden items-center justify-center gap-2 border-t border-slate-100 px-3 py-2 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 md:inline-flex"
-          >
-            {expanded ? (
-              <>
-                <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
-                <span>Recolher</span>
-              </>
-            ) : (
-              <ChevronsRight className="h-4 w-4" aria-hidden="true" />
-            )}
-          </button>
         </div>
       </aside>
     </>

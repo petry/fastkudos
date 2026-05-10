@@ -92,11 +92,14 @@ describe('<EventShell>', () => {
     expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 
-  it('persiste estado expandido em localStorage', async () => {
+  it('clicar no avatar (desktop) alterna expanded e persiste em localStorage', async () => {
     const user = userEvent.setup();
     window.localStorage.setItem('fk:sidebar:expanded', 'true');
     renderShell();
-    await user.click(screen.getByRole('button', { name: /recolher menu/i }));
+    const trigger = screen.getByRole('button', { name: /abrir menu de navega/i });
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await user.click(trigger);
     expect(window.localStorage.getItem('fk:sidebar:expanded')).toBe('false');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 });

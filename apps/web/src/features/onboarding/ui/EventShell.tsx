@@ -49,10 +49,18 @@ export function EventShell({ slug, profile, event, onSignOut, children }: EventS
       : []),
   ];
 
+  const handleAvatarClick = () => {
+    const isDesktop = window.matchMedia?.('(min-width: 768px)')?.matches ?? true;
+    if (isDesktop) {
+      setExpanded((v) => !v);
+    } else {
+      setMobileOpen((v) => !v);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50/40">
       <TopBar
-        onMenuClick={() => setMobileOpen(true)}
         rightSlot={
           <>
             <div className="hidden text-right text-xs leading-tight sm:block">
@@ -63,16 +71,25 @@ export function EventShell({ slug, profile, event, onSignOut, children }: EventS
                 {profile.displayName}
               </p>
             </div>
-            <Avatar name={profile.displayName} imageUrl={profile.avatarUrl} size="sm" />
+            <button
+              type="button"
+              onClick={handleAvatarClick}
+              aria-label="Abrir menu de navegação"
+              aria-expanded={expanded || mobileOpen}
+              className="rounded-full transition-transform duration-150 hover:scale-105 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+            >
+              <Avatar name={profile.displayName} imageUrl={profile.avatarUrl} size="sm" />
+            </button>
           </>
         }
       />
 
       <div className="mx-auto flex w-full max-w-7xl">
+        <main className="min-w-0 flex-1 px-4 py-8 sm:px-6 md:py-10">{children}</main>
+
         <Sidebar
           items={items}
           expanded={expanded}
-          onToggleExpanded={() => setExpanded((v) => !v)}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
           footer={
@@ -97,8 +114,6 @@ export function EventShell({ slug, profile, event, onSignOut, children }: EventS
             </button>
           }
         />
-
-        <main className="min-w-0 flex-1 px-4 py-8 sm:px-6 md:py-10">{children}</main>
       </div>
     </div>
   );
