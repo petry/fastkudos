@@ -19,7 +19,7 @@ export function DashboardPage({ session, events }: DashboardPageProps) {
 
   function handleSignOut() {
     session.clear();
-    window.location.assign('/login');
+    window.location.assign('/');
   }
 
   return (
