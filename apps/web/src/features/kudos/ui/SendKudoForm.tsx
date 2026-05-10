@@ -4,6 +4,7 @@ import { KUDO_MAX_LENGTH } from '@fastkudos/shared';
 import { validateKudoContent } from '../domain/validate';
 import type { KudosGateway } from '../domain/ports';
 import { Avatar } from '../../../components/ui/Avatar';
+import { useFormSubmit } from '../../../lib/use-form-submit';
 
 export interface SendKudoFormProps {
   receiver: { id: string; displayName: string; avatarUrl?: string | null };
@@ -15,27 +16,17 @@ export interface SendKudoFormProps {
 
 export function SendKudoForm({ receiver, token, gateway, onSent, onCancel }: SendKudoFormProps) {
   const [content, setContent] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { submitting, error, run } = useFormSubmit();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    const v = validateKudoContent(content);
-    if (!v.ok) {
-      setError(v.error);
-      return;
-    }
-    setSubmitting(true);
-    try {
+    await run(async () => {
+      const v = validateKudoContent(content);
+      if (!v.ok) throw new Error(v.error);
       await gateway.submit({ token, receiverId: receiver.id, content: v.value });
       setContent('');
       onSent?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'erro');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   }
 
   const remaining = KUDO_MAX_LENGTH - content.length;

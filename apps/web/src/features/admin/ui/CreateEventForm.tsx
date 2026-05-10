@@ -3,6 +3,7 @@ import { AlertCircle, CalendarDays, Check, Copy, Plus } from 'lucide-react';
 import { slugSchema } from '@fastkudos/shared';
 import type { OwnedEventsGateway } from '../domain/ports';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { useFormSubmit } from '../../../lib/use-form-submit';
 
 export interface CreateEventFormProps {
   token: string;
@@ -16,32 +17,24 @@ const INPUT_CLASS =
 export function CreateEventForm({ token, gateway, onCreated }: CreateEventFormProps) {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ id: string; slug: string; name: string } | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { submitting, error, run } = useFormSubmit();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    const slugCheck = slugSchema.safeParse(slug);
-    if (!slugCheck.success) {
-      setError(slugCheck.error.issues[0]?.message ?? 'slug inválido');
-      return;
-    }
-    setSubmitting(true);
-    try {
+    await run(async () => {
+      const slugCheck = slugSchema.safeParse(slug);
+      if (!slugCheck.success) {
+        throw new Error(slugCheck.error.issues[0]?.message ?? 'slug inválido');
+      }
       const event = await gateway.create({ token, name, slug });
       setCreated(event);
       setName('');
       setSlug('');
       setCopied(false);
       onCreated?.(event);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'erro');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   }
 
   async function handleCopy(url: string) {

@@ -12,6 +12,7 @@ import {
 import { slugSchema } from '@fastkudos/shared';
 import type { OwnedEventsGateway } from '../domain/ports';
 import { useAsyncData } from '../../../lib/use-async-data';
+import { useFormSubmit } from '../../../lib/use-form-submit';
 
 export interface EventsListProps {
   token: string;
@@ -192,25 +193,17 @@ function EditEventRow({
 }) {
   const [name, setName] = useState(initial.name);
   const [slug, setSlug] = useState(initial.slug);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { submitting: busy, error, run } = useFormSubmit();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    const slugCheck = slugSchema.safeParse(slug);
-    if (!slugCheck.success) {
-      setError(slugCheck.error.issues[0]?.message ?? 'slug inválido');
-      return;
-    }
-    setBusy(true);
-    try {
+    await run(async () => {
+      const slugCheck = slugSchema.safeParse(slug);
+      if (!slugCheck.success) {
+        throw new Error(slugCheck.error.issues[0]?.message ?? 'slug inválido');
+      }
       await onSave({ name, slug });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'erro');
-    } finally {
-      setBusy(false);
-    }
+    });
   }
 
   return (
