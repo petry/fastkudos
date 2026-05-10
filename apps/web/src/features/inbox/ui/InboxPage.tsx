@@ -22,6 +22,7 @@ export function InboxPage({ session, userSession, participants, inbox }: InboxPa
   const { slug = '' } = useParams();
   const navigate = useNavigate();
   const [joined] = useState(() => session.load(slug));
+  const [loggedIn] = useState(() => !!userSession?.load());
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [event, setEvent] = useState<EventSummary | null>(null);
 
@@ -63,7 +64,13 @@ export function InboxPage({ session, userSession, participants, inbox }: InboxPa
   }
 
   return (
-    <EventShell slug={slug} profile={joined.profile} event={event} onSignOut={handleLeave}>
+    <EventShell
+      slug={slug}
+      profile={joined.profile}
+      event={event}
+      onSignOut={handleLeave}
+      loggedIn={loggedIn}
+    >
       <div className="mx-auto max-w-2xl space-y-8">
         <section>
           <SectionHeader title="Sua caixa de recados" icon={MessageCircle} />

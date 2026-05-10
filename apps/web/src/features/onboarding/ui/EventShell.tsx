@@ -1,47 +1,41 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { LogOut, MessageCircle, Shield, Sparkles } from 'lucide-react';
+import { LayoutDashboard, LogOut, MessageCircle, Shield, Sparkles } from 'lucide-react';
 import type { Profile } from '@fastkudos/shared';
 import type { EventSummary } from '../../participants/domain/ports';
 import { Avatar } from '../../../components/ui/Avatar';
 import { TopBar } from '../../../components/ui/TopBar';
 import { Sidebar, type SidebarItem } from '../../../components/ui/Sidebar';
-
-const SIDEBAR_KEY = 'fk:sidebar:expanded';
-
-function loadInitialExpanded(): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    const v = window.localStorage?.getItem(SIDEBAR_KEY);
-    if (v === 'true') return true;
-    if (v === 'false') return false;
-  } catch {
-    /* localStorage indisponível (ex.: storage desabilitado) */
-  }
-  return window.matchMedia?.('(min-width: 768px)')?.matches ?? true;
-}
+import { loadInitialExpanded, persistExpanded } from '../../../components/ui/sidebarState';
 
 export interface EventShellProps {
   slug: string;
   profile: Profile;
   event: EventSummary | null;
   onSignOut: () => void;
+  /** Quando verdadeiro (usuário logado via rede social), mostra link Dashboard como primeiro item da sidebar. */
+  loggedIn?: boolean;
   children: ReactNode;
 }
 
-export function EventShell({ slug, profile, event, onSignOut, children }: EventShellProps) {
+export function EventShell({
+  slug,
+  profile,
+  event,
+  onSignOut,
+  loggedIn = false,
+  children,
+}: EventShellProps) {
   const [expanded, setExpanded] = useState<boolean>(loadInitialExpanded);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage?.setItem(SIDEBAR_KEY, expanded ? 'true' : 'false');
-    } catch {
-      /* ignora falhas de storage */
-    }
+    persistExpanded(expanded);
   }, [expanded]);
 
   const items: SidebarItem[] = [
+    ...(loggedIn
+      ? [{ to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true }]
+      : []),
     { to: `/e/${slug}`, label: 'Mural', icon: Sparkles, end: true },
     { to: `/e/${slug}/inbox`, label: 'Caixa de recados', icon: MessageCircle },
     ...(profile.isAdmin

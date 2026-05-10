@@ -68,7 +68,13 @@ export function EventModerationPage({
   }
 
   return (
-    <EventShell slug={slug} profile={joined.profile} event={event} onSignOut={handleLeave}>
+    <EventShell
+      slug={slug}
+      profile={joined.profile}
+      event={event}
+      onSignOut={handleLeave}
+      loggedIn={!!logged}
+    >
       <div className="mx-auto max-w-2xl space-y-10">
         <FeedbacksSection
           token={logged.token}

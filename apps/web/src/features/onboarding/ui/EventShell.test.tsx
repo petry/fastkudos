@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import type { Profile } from '@fastkudos/shared';
@@ -83,6 +83,20 @@ describe('<EventShell>', () => {
   it('omite link Moderação quando profile.isAdmin é false', () => {
     renderShell();
     expect(screen.queryByRole('link', { name: /modera[cç][aã]o/i })).not.toBeInTheDocument();
+  });
+
+  it('exibe link Dashboard como primeiro item quando loggedIn=true', () => {
+    renderShell({ loggedIn: true });
+    const dashboard = screen.getByRole('link', { name: /^dashboard$/i });
+    expect(dashboard).toHaveAttribute('href', '/dashboard');
+    const nav = screen.getByRole('navigation');
+    const sidebarLinks = within(nav).getAllByRole('link');
+    expect(sidebarLinks[0]).toBe(dashboard);
+  });
+
+  it('omite link Dashboard quando loggedIn é falso/ausente', () => {
+    renderShell();
+    expect(screen.queryByRole('link', { name: /^dashboard$/i })).not.toBeInTheDocument();
   });
 
   it('botão Sair no rodapé do sidebar dispara onSignOut', async () => {

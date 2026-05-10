@@ -220,6 +220,7 @@ function JoinedView({
   mural,
   notify,
   onLeave,
+  userSession,
 }: {
   slug: string;
   joined: { token: string; profile: Profile };
@@ -228,6 +229,7 @@ function JoinedView({
   const [profiles, setProfiles] = useState<Profile[] | null>(null);
   const [event, setEvent] = useState<EventSummary | null>(null);
   const [profilesError, setProfilesError] = useState<string | null>(null);
+  const [loggedIn] = useState(() => !!userSession?.load());
 
   useEffect(() => {
     let cancelled = false;
@@ -266,7 +268,13 @@ function JoinedView({
     : 0;
 
   return (
-    <EventShell slug={slug} profile={joined.profile} event={event} onSignOut={onLeave}>
+    <EventShell
+      slug={slug}
+      profile={joined.profile}
+      event={event}
+      onSignOut={onLeave}
+      loggedIn={loggedIn}
+    >
       <div className="mx-auto max-w-2xl space-y-8">
         <CollapsibleSection title="Participantes" icon={Users} count={otherCount} defaultExpanded={false}>
           {profilesError ? (
