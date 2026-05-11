@@ -28,6 +28,10 @@ export function AuthCallbackPage({ session, auth }: AuthCallbackPageProps) {
     const token = params.get('token');
     const redirect = safeRedirect(params.get('redirect'));
 
+    // Síncrono antes de qualquer await: trackers como o GA leem
+    // window.location.href em useEffects irmãos e capturariam o token.
+    window.history.replaceState({}, '', window.location.pathname);
+
     if (!token) {
       setError('Token ausente na resposta do login.');
       return;
@@ -39,8 +43,6 @@ export function AuthCallbackPage({ session, auth }: AuthCallbackPageProps) {
       .then((user) => {
         if (cancelled) return;
         session.save({ token, user });
-        // Limpa o fragmento da URL antes de redirecionar.
-        window.history.replaceState({}, '', window.location.pathname);
         navigate(redirect, { replace: true });
       })
       .catch((e) => {

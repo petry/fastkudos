@@ -49,8 +49,14 @@ export function trackPageView(path: string, title?: string): void {
   window.gtag('event', 'page_view', {
     page_path: path,
     page_title: title ?? document.title,
-    page_location: window.location.href,
+    page_location: sanitizedLocation(),
   });
+}
+
+// Remove hash e query: tokens OAuth e parâmetros sensíveis nunca devem ir ao GA.
+function sanitizedLocation(): string {
+  const { origin, pathname } = window.location;
+  return `${origin}${pathname}`;
 }
 
 export function currentEventSlug(): string | undefined {
